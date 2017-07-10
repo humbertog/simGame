@@ -1,0 +1,71 @@
+Data dictionary:
+####################################
+trips_user.csv:
+####################################
+### ORIGINAL:
+
+SESSION_ID          sessionId                           Session identifier
+PLAYER_ID           player
+DEP_TIME_F_INI      `initial departure time`
+DEP_TIME_F          `modified departure time`
+ARR_TIME_F_INI      `initial arrival time`
+ARR_TIME_F          `made arrival time`
+SCORE               `score`
+PATH                `sections`
+
+###
+PATH_NAME
+PATH_NAME_INI                                           Path name of the initial choice
+ORIGIN
+DEST  
+DEMAND              From stat.csv                       Demand scenario
+PATH_REROUTE                                            Binary variable that is 1 if player rerouted
+TREATMENT                                                
+OD          
+TT
+DEP_TIME
+ARR_TIME
+DEP_TIME_INI                                            Original planned dep time 
+ARR_TIME_INI                                            (This may be taken from the DBB file, so it won't coincide with that of BASE)
+
+####################################
+resXXX_proc.csv
+####################################
+VEH_ID
+VEH_TYPE
+ORIGIN     
+DEST
+DEP_TIME   
+ARR_TIME   
+PATH
+
+###               
+SESSION_ID          From stat.csv                     
+DEMAND              From stat.csv
+FIN_TIME            From stat.csv
+
+###
+PATH_NAME    
+PATH_REROUTE 
+OD           
+TT
+
+####################################
+SG_SXXXres_proc.csv
+####################################
+VEH_ID              
+VEH_TYPE            NA
+ORIGIN              NA (computed later)
+DEST                NA
+DEP_TIME            
+ARR_TIME   
+PATH
+
+###
+PATH_NAME   
+PATH_REROUTE       Always = 0
+OD
+TT
+
+
+
