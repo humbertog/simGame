@@ -1,5 +1,9 @@
 #####################################################################
-# 
+# Compares the flows and travel times of the base scenario (the simulation without players)
+# and the played sessions.
+# 1. Obtain the flow in both the base and played scenarios
+# 2. Obtains the tt of both the base and played scenarios
+# 3. Plotting
 #####################################################################
 library(tidyverse)
 

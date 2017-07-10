@@ -1,5 +1,11 @@
 #####################################################################
-# 
+# We fit a multinomial logistic model to the choices. 
+# The variables that we take into accout are:
+# - the mean travel time in each of the alternatives
+# - the standard deviation of the travel time
+# - the treatment to which the player belongs
+# The mean tt and the sdcorrespond to those of the travel time distributions
+# constructed around the departure time of the chosen alternative.
 #####################################################################
 library(tidyverse)
 library(mlogit)

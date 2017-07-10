@@ -1,8 +1,9 @@
 #####################################################################
 # We analyse the route choice distributions along with the observed travel times during the sessions.
-# The objectives are:
-# 1. See if there is a relation between the tt observed in the routes and the choices
-#
+# The objective is to see if there is a relation between the tt observed in the routes and the choices.
+# In particular, we care about the relation that the observed choice proportions have
+# with the mean travel time in a particular interval of time.
+# 
 # The data needed to do this analysis:
 # 1. resXXX.csv files (they contain the full set of trips in each OD)
 # 2. trips.csv file (they contain the trips that were controlled by the users)

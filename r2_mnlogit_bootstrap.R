@@ -1,5 +1,6 @@
 #####################################################################
-# 
+# Assess the predictive accuracy of our mnlogit model by performing a bootstrap 
+# validation of our model. 
 #####################################################################
 library(tidyverse)
 library(mlogit)

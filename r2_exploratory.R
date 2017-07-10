@@ -3,6 +3,7 @@
 # The objectives are:
 # 1. Exploratory analysis of the choice distributions
 # 2. Test if the choice distributions are different for different treatments
+# 3. A GLM is fitted to the proportion of times a route was chosen
 #
 # The data needed to do this analysis:
 # 1. resXXX.csv files (they contain the full set of trips in each OD)

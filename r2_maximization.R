@@ -1,5 +1,10 @@
 #####################################################################
-# 
+# We study the number of times that the minimum travel time route was chosen. 
+# 1. For each played mission, we take an interval around their departure time and
+# compute the mean travel time of all the trips that departed in this time interval
+# for the three alternatives. 
+# 2. Then, we sort the alternatives in ascending order of mean TT. 
+# 3. Finally we see in which place the chosen alternative is.
 #####################################################################
 library(tidyverse)
 
