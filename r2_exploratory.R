@@ -12,9 +12,9 @@
 library(tidyverse)
 
 # Read the res_files
-source("r00_config.R")
-source("r0_readTrips_res.R")
-source("r0_readTrips_player.R")
+source("r0_config.R")
+source("r1_readTrips_res.R")
+source("r1_readTrips_player.R")
 
 ### Choice distributions
 trips_play %>% ggplot(aes(PATH_NAME_INI)) + 

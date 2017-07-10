@@ -18,11 +18,11 @@
 #    - DEMAND (demand level used in the experiment)
 #####################################################################
 library(tidyverse)
-source("r00_config.R")
+source("r0_config.R")
 
 DIR <- DIR_TRIP_SET
 
-SESSION_IDS <- c(625, 626, 628, 630, 631, 633, 634)
+SESSION_IDS <- c(625, 626, 628, 629, 630, 631, 633, 634)
 
 # Loop to read files and assign the session ID's
 # The data is then joined into one DF

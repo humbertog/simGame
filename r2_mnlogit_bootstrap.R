@@ -6,9 +6,9 @@ library(tidyverse)
 library(mlogit)
 
 # Read the res_files
-source("r00_config.R")
-source("r0_readTrips_res.R")
-source("r0_readTrips_player.R")
+source("r0_config.R")
+source("r1_readTrips_res.R")
+source("r1_readTrips_player.R")
 
 
 
@@ -17,10 +17,6 @@ source("r0_readTrips_player.R")
 ######################################
 # size of interval 
 h <- 600
-
-trips_play <- 
-  trips_play %>% 
-  filter(SESSION_ID != 629)
 
 trips_res_play <- tibble()
 
@@ -61,7 +57,19 @@ trips_res_play <-
 
 
 # check!
-sum(table(trips_res_play$CHOICE, trips_res_play$CHOICE_ID)[1,] != 2)
+#chTabl <- table(trips_res_play$CHOICE, trips_res_play$CHOICE_ID)
+#sum(chTabl[1,] != 2)
+#chTabl[,chTabl[1,] != 2]
+
+#trips_res_play %>% filter(CHOICE_ID == 367)
+
+# we remove the two choices that are not complete
+trips_res_play <- 
+  trips_res_play %>% 
+    filter(!CHOICE_ID %in% c(290, 367,366, 699, 712))
+
+chTabl <- table(trips_res_play$CHOICE, trips_res_play$CHOICE_ID)
+sum(chTabl[1,] != 2)
 
 ######################################
 # mnlogit
@@ -104,7 +112,7 @@ for(i in 1:n_boots){
   
   mod_mnlogit0 <- mlogit(f0  , data=choices_mnl_train)
   mod_mnlogit1 <- mlogit(f1  , data=choices_mnl_train)
-  mod_mnlogit2 <- mlogit(f2  , data=choices_mnl_train)
+  mod_mnlogit2 <- mlogit(f2  , data=choices_mnl_train, na.action = na.omit)
   mod_mnlogit11 <- mlogit(f11  , data=choices_mnl_train)
   mod_mnlogit22 <- mlogit(f22  , data=choices_mnl_train)
   

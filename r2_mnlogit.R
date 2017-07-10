@@ -12,9 +12,9 @@ library(tidyverse)
 library(mlogit)
 
 # Read the res_files
-source("r00_config.R")
-source("r0_readTrips_res.R")
-source("r0_readTrips_player.R")
+source("r0_config.R")
+source("r1_readTrips_res.R")
+source("r1_readTrips_player.R")
 
 
 
@@ -23,10 +23,6 @@ source("r0_readTrips_player.R")
 ######################################
 # size of interval 
 h <- 600
-
-trips_play <- 
-  trips_play %>% 
-  filter(SESSION_ID != 629)
 
 trips_res_play <- tibble()
 
@@ -54,7 +50,8 @@ for (i in 1:dim(trips_play)[1]) {
       mutate(CHOICE_ID=i, 
              OD = od_,
              CHOSEN_PATH=chosen_,
-             TREATMENT=treatment_
+             TREATMENT=treatment_,
+             SESSION_ID = db_
               )
     
   trips_res_play <- bind_rows(trips_res_play, trips_res_play_t) 
@@ -67,12 +64,24 @@ trips_res_play <-
 
 
 # check!
-sum(table(trips_res_play$CHOICE, trips_res_play$CHOICE_ID)[1,] != 2)
+#chTabl <- table(trips_res_play$CHOICE, trips_res_play$CHOICE_ID)
+#sum(chTabl[1,] != 2)
+#chTabl[,chTabl[1,] != 2]
+
+#trips_res_play %>% filter(CHOICE_ID == 367)
+
+# we remove the two choices that are not complete
+trips_res_play <- 
+  trips_res_play %>% 
+  filter(!CHOICE_ID %in% c(290, 367,366, 699, 712))
+
+chTabl <- table(trips_res_play$CHOICE, trips_res_play$CHOICE_ID)
+sum(chTabl[1,] != 2)
 
 ######################################
 # mnlogit
 ######################################
-od <- "OD2"
+od <- "OD1_2"
 treat <- "t3"
 
 data_model <- 
@@ -81,7 +90,8 @@ data_model <-
   #filter(TREATMENT==treat) %>%
   as.data.frame()
 
-choices_mnl <- mlogit.data(data_model, choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
+choices_mnl_train <- mlogit.data(data_model[data_model$SESSION_ID != 629,], choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
+choices_mnl_test <- mlogit.data(data_model[data_model$SESSION_ID == 629,], choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
 
 f0 <- mFormula(CHOICE ~ 1 )
 f1 <- mFormula(CHOICE ~ MEAN_TT )  
@@ -89,11 +99,11 @@ f2 <- mFormula(CHOICE ~ MEAN_TT + SD_TT)
 f11 <- mFormula(CHOICE ~ MEAN_TT | TREATMENT)          # I CONSIDER THAT THIS IS THE CORRECT MODEL
 f22 <- mFormula(CHOICE ~ MEAN_TT + SD_TT | TREATMENT)  # I CONSIDER THAT THIS IS THE CORRECT MODEL
 
-mod_mnlogit0 <- mlogit(f0  , data=choices_mnl)
-mod_mnlogit1 <- mlogit(f1  , data=choices_mnl)
-mod_mnlogit2 <- mlogit(f2  , data=choices_mnl)
-mod_mnlogit11 <- mlogit(f11  , data=choices_mnl)
-mod_mnlogit22 <- mlogit(f22  , data=choices_mnl)
+mod_mnlogit0 <- mlogit(f0  , data=choices_mnl_train)
+mod_mnlogit1 <- mlogit(f1  , data=choices_mnl_train)
+mod_mnlogit2 <- mlogit(f2  , data=choices_mnl_train)
+mod_mnlogit11 <- mlogit(f11  , data=choices_mnl_train)
+mod_mnlogit22 <- mlogit(f22  , data=choices_mnl_train)
 
 summary(mod_mnlogit0)
 summary(mod_mnlogit1)
@@ -103,10 +113,21 @@ summary(mod_mnlogit22)
 
 
 # check:
-colMeans(predict(mod_mnlogit11, choices_mnl))
+colMeans(predict(mod_mnlogit11, choices_mnl_train))
 apply(fitted(mod_mnlogit11, outcome = FALSE), 2, mean)
 
+#
+observed_choices_TRAIN <- table(data_model$CHOICE[data_model$SESSION_ID != 629], data_model$PATH_NAME[data_model$SESSION_ID != 629])
+observed_choices_TRAIN[2,] / colSums(observed_choices_TRAIN)
 
+observed_choicesTEST <- table(data_model$CHOICE[data_model$SESSION_ID == 629], data_model$PATH_NAME[data_model$SESSION_ID == 629])
+observed_choicesTEST[2,] / colSums(observed_choicesTEST)
+
+colMeans(predict(mod_mnlogit0, choices_mnl_test))
+colMeans(predict(mod_mnlogit1, choices_mnl_test))
+colMeans(predict(mod_mnlogit2, choices_mnl_test))
+colMeans(predict(mod_mnlogit11, choices_mnl_test))
+colMeans(predict(mod_mnlogit22, choices_mnl_test))
 
 # Obtain the probabilities:
 # ln(p1 / p3) = b0_p1 + b1_p1 * x_i
@@ -131,7 +152,7 @@ p2 <- exp(sum(coef_x_2))* denom
 c(p3, p1,p2)
 
 mlogit.data(data_model, choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
-predict(mod_mnlogit11, choices_mnl,type="probs")[1,]
+predict(mod_mnlogit11, choices_mnl_train,type="probs")[1,]
 
 
 

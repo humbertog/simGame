@@ -17,7 +17,7 @@
 #####################################################################
 library(tidyverse)
 library(lubridate)
-source("r00_config.R")
+source("r0_config.R")
 source("r0_routes.R")
 
 DIR <- DIR_TRIP_SET

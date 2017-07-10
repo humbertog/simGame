@@ -16,7 +16,7 @@
 #    - DEMAND (demand level used in the experiment)
 #####################################################################
 library(tidyverse)
-source("r00_config.R")
+source("r0_config.R")
 source("r0_routes.R")
 # 
 DIR <- DIR_TRIP_SET_BASE
@@ -47,6 +47,30 @@ trips_res_base <-
 trips_res_base <- 
   trips_res_base %>% 
   filter(ARR_TIME < FIN_TIME-1) 
+
+
+# Obtains the origin
+for (i in 1:dim(trips_res_base)[1]) {
+  path_temp <- unlist(strsplit(trips_res_base$PATH[i], " ", fixed = FALSE, perl = FALSE, useBytes = FALSE))
+  # Pre-process the PATH to obtain only the link ids
+  
+  origin <- NA
+  if (path_temp[1] == "T_test1") {
+    origin <- "E_test1"
+  } 
+  if (path_temp[1] == "T_test2") {
+    origin <- "E_test2"
+  } 
+  if (path_temp[1] %in% c("T_test3","T_58442383_FRef_F")  ) {
+    origin <- "E_test3"
+  } 
+  if (is.na(origin)) {
+    print(path_temp[1])
+  }
+  trips_res_base$ORIGIN[i] <- origin
+}
+# ONLY USED TO PROCESS res629
+# write.csv(trips_res_base, "temp.csv")
 
 
 ### 
@@ -89,9 +113,9 @@ trips_res_base <-
                                                 "R_test2_r1", "R_test1_3_r2", "R_test2_r2", "other"),1,0) )
 
 # Adds the name of the OD
-trips_res_base$ORIGIN[trips_res_base$PATH_NAME %in% c("R_test1", "R_test1_2", "R_test1_3")] <- "E_test1"
-trips_res_base$ORIGIN[trips_res_base$PATH_NAME %in% c("R_test2", "R_test2_2", "R_test2_3")] <- "E_test2"
-trips_res_base$ORIGIN[trips_res_base$PATH_NAME %in% c("R_N1", "R_N2", "R_N3")] <- "E_test3"
+#trips_res_base$ORIGIN[trips_res_base$PATH_NAME %in% c("R_test1", "R_test1_2", "R_test1_3")] <- "E_test1"
+#trips_res_base$ORIGIN[trips_res_base$PATH_NAME %in% c("R_test2", "R_test2_2", "R_test2_3")] <- "E_test2"
+#trips_res_base$ORIGIN[trips_res_base$PATH_NAME %in% c("R_N1", "R_N2", "R_N3")] <- "E_test3"
 
 
 trips_res_base <- trips_res_base %>% mutate(OD=NA)

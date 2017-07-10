@@ -10,9 +10,9 @@ library(tidyverse)
 
 
 ###  Read the res_files
-source("r00_config.R")
-source("r0_readTrips_res.R")
-source("r0_readTrips_player.R")
+source("r0_config.R")
+source("r1_readTrips_res.R")
+source("r1_readTrips_player.R")
 
 ######################
 
@@ -29,7 +29,7 @@ od_path <- data.frame(
 ###
 trips_play_choice <- 
   trips_play %>% 
-  filter(SESSION_ID != 629) %>%
+  #filter(SESSION_ID != 629) %>%
   mutate(ALT1 = NA, ALT2=NA, ALT3=NA, ALT1N=NA, ALT2N=NA, ALT3N=NA)
 
 
@@ -60,7 +60,7 @@ for (i in 1:dim(trips_play_choice)[1]) {
     if (length(q_$TT) <=5) {
       print(i)
     }
-    OD_df_$PCUM[k] <- ecdf(q_$TT)(tt)
+    #OD_df_$PCUM[k] <- ecdf(q_$TT)(tt)
     OD_df_$MEAN[k] <- mean(q_$TT)
     
   }
@@ -91,9 +91,9 @@ trips_play_choice %>%
             NMAXIM2 = sum(MAXIM2),
             NMAXIM3 = sum(MAXIM3),
             NTOT=n()) %>%
-  mutate(PERCMAXIM1 = NMAXIM1 / NTOT,
-         PERCMAXIM2 = NMAXIM2 / NTOT,
-         PERCMAXIM3 = NMAXIM3 / NTOT
+  mutate(PERCMAXIM1 = round(NMAXIM1 / NTOT,3),
+         PERCMAXIM2 = round(NMAXIM2 / NTOT,3),
+         PERCMAXIM3 = round(NMAXIM3 / NTOT,3)
          )
 
 # For the OD1_1 and the OD2 the share of participants that chose 
@@ -107,19 +107,25 @@ trips_play_choice %>%
 
 
 trips_play_choice %>% 
-  ggplot() +
+  ggplot() + theme_bw() +
   geom_density(aes(ALT2 - ALT1, fill=OD), alpha=.3) 
 
-
+trips_play_choice %>% 
+  ggplot() + theme_bw() +
+  geom_density(aes(ALT3 - ALT1, fill=OD), alpha=.3) 
 # If we plot the difference in mean tt of the fastest and second fastest alternatives
 # we can see that the difference of mean tt  in the OD1_1 is larger than
 # for the OD1_2, which makes it easier to discriminate
 
 
+trips_play_choice %>% 
+  group_by(OD) %>%
+  summarise(mean(ALT2 - ALT1, na.rm=TRUE))
 
 
-
-
+trips_play_choice %>% 
+  group_by(OD) %>%
+  summarise(mean(ALT3 - ALT1, na.rm=TRUE))
 
 
 

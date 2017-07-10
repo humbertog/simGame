@@ -11,9 +11,9 @@
 library(tidyverse)
 
 # Read the res_files
-source("r00_config.R")
-source("r0_readTrips_res.R")
-source("r0_readTrips_player.R")
+source("r0_config.R")
+source("r1_readTrips_res.R")
+source("r1_readTrips_player.R")
 
 # sequence of times to construct the intervals for which the mean tt and
 # choices are constructed
@@ -22,7 +22,7 @@ seqt <- seq(0, 5400, 600)
 # size of interval 
 h <- 600
 
-SESSION_IDS <- c(625, 626, 628, 630, 631, 633, 634)
+SESSION_IDS <- c(625, 626, 628, 629, 630, 631, 633, 634)
 
 trips_res_play <- tibble()
 for (s in SESSION_IDS) {
