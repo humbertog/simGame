@@ -44,9 +44,14 @@ trips_res_base <-
 
 
 # it is important to remove those trips that were not finished during the game
-trips_res_base <- 
-  trips_res_base %>% 
-  filter(ARR_TIME < FIN_TIME-1) 
+#trips_res_base %>% 
+#  ggplot() +
+#  geom_point(aes(DEP_TIME, ARR_TIME)) +
+  
+
+#trips_res_base <- 
+#  trips_res_base %>% 
+#  filter(ARR_TIME < FIN_TIME) 
 
 
 # Obtains the origin

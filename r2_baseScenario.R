@@ -12,7 +12,7 @@ library(tidyverse)
 source("r0_config.R")
 source("r1_readTrips_base.R")
 source("r1_readTrips_res.R")
-source("r1_readTrips_player.R")
+#source("r1_readTrips_player.R")
 
 
 ########################################################################
@@ -34,6 +34,31 @@ trips_res_base_s <-
   mutate(DB_ID = "base")
 
 
+trips_res %>%
+  group_by(PATH_NAME) %>% 
+  summarise(max(DEP_TIME), max(ARR_TIME))
+
+trips_res_base %>%
+  group_by(PATH_NAME) %>% 
+  summarise(max(DEP_TIME),max(ARR_TIME))
+
+#######
+# We add a column with the initial path
+
+
+trips_res_s <-
+  trips_res_s %>% 
+    mutate(PATH_NAME_ACTUAL = PATH_NAME) %>%
+    mutate(PATH_NAME=ifelse(PATH_NAME_ACTUAL %in% c("R_test1_2_r1", "R_test1_2_r2"), "R_test1_2", PATH_NAME)) %>%
+    mutate(PATH_NAME=ifelse(PATH_NAME_ACTUAL %in% c("R_test1_r1", "R_test1_r2"), "R_test1", PATH_NAME)) %>%
+    mutate(PATH_NAME=ifelse(PATH_NAME_ACTUAL %in% c("R_test2_3_r1", "R_test2_3_r2"), "R_test2_3", PATH_NAME)) %>%
+    mutate(PATH_NAME=ifelse(PATH_NAME_ACTUAL %in% c("R_test2_r1", "R_test2_r2"), "R_test2", PATH_NAME))
+
+
+
+
+
+
 dim(trips_res_s)
 dim(trips_res_base_s)
 
@@ -41,8 +66,8 @@ dim(trips_res_base_s)
 # Bind the data sets
 trips_play_base <- 
   bind_rows(trips_res_s, trips_res_base_s) %>%
-  filter(PATH_REROUTE == 0, DEP_TIME > 0) %>%
-  mutate(TT = TT )
+  #filter(PATH_REROUTE == 0, DEP_TIME > 1800) %>%
+  filter(DEP_TIME > 900 , DEP_TIME < 4500)
 
 # CHECK
 trips_play_base %>% 
@@ -58,7 +83,7 @@ trips_play_base %>%
 trips_play %>% 
   filter(SESSION_ID == 631) %>%
   group_by(PATH_NAME) %>%
-  summarise(min(DEP_TIME))
+  summarise(min(DEP_TIME), max(DEP_TIME))
 
 ######################################
 # ROUTE TRIP DISTRIBUTION
@@ -87,6 +112,13 @@ trips_play_base %>%
 trips_play_base %>%
   ggplot() +
   geom_density(aes(TT, fill=DB_ID), alpha=.3) +
+  facet_grid(PATH_NAME ~ .)
+
+
+# Why if R_N1 is used more it is faster?
+trips_play_base %>%
+  ggplot() +
+  geom_histogram(aes(x = DEP_TIME, fill=DB_ID), alpha=.5, position = "dodge") +
   facet_grid(PATH_NAME ~ .)
 
 ######################################
