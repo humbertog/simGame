@@ -9,10 +9,10 @@ library(tidyverse)
 
 
 ###  Read the res_files
-source("r00_config.R")
-source("r0_readTrips_base.R")
-source("r0_readTrips_res.R")
-source("r0_readTrips_player.R")
+source("r0_config.R")
+source("r1_readTrips_base.R")
+source("r1_readTrips_res.R")
+source("r1_readTrips_player.R")
 
 
 ########################################################################
@@ -61,7 +61,7 @@ trips_play %>%
   summarise(min(DEP_TIME))
 
 ######################################
-# ROUTE TRIP DIST
+# ROUTE TRIP DISTRIBUTION
 ######################################
 trips_play_base %>%
   ggplot() +
@@ -77,27 +77,25 @@ trips_play_base %>%
 # All OD's
 trips_play_base %>%
   ggplot() +
-  geom_density(aes(TT, fill=DB_ID), alpha=.1) 
+  geom_density(aes(TT, fill=DB_ID), alpha=.3) 
   
 trips_play_base %>%
   ggplot() +
-  geom_density(aes(TT, fill=DB_ID), alpha=.1) +
+  geom_density(aes(TT, fill=DB_ID), alpha=.3) +
   facet_grid(OD ~ .)
 
 trips_play_base %>%
   ggplot() +
-  geom_density(aes(TT, fill=DB_ID), alpha=.1) +
+  geom_density(aes(TT, fill=DB_ID), alpha=.3) +
   facet_grid(PATH_NAME ~ .)
-
-
-
 
 ######################################
 # FLOW: number of cars entering the route in an interval of time
 ######################################
 ###  Cut intervals
 intervals <- seq(0,5400, 900)
-trips_play_base <- trips_play_base %>% mutate(DEP_TIME_INTERVAL=cut(DEP_TIME, intervals))
+trips_play_base <- trips_play_base %>% 
+  mutate(DEP_TIME_INTERVAL=cut(DEP_TIME, intervals))
 
 flow_interval <- 
   trips_play_base %>% 
@@ -108,17 +106,26 @@ flow_interval <-
 # check nrows: 
 table(trips_play_base$DEP_TIME_INTERVAL)
 
+# Flow
 flow_interval %>%
   ggplot(aes(DEP_TIME_INTERVAL, FLOW)) +
   geom_point(aes(colour=DB_ID), alpha=.5) +
   geom_line(aes(group = DB_ID, colour = DB_ID)) + 
   facet_grid(PATH_NAME ~ .)
 
+# Mean TT
 flow_interval %>%
   ggplot(aes(DEP_TIME_INTERVAL, MEAN_TT)) +
   geom_point(aes(colour=DB_ID), alpha=.5) +
   geom_line(aes(group = DB_ID, colour = DB_ID)) + 
   facet_grid(PATH_NAME ~ .)
+
+# Flow vs TT
+flow_interval %>%
+  filter() %>%
+  ggplot(aes(FLOW, MEAN_TT)) +
+  geom_point(aes(colour=DB_ID), alpha=.5) +
+  facet_grid(PATH_NAME ~ DEP_TIME_INTERVAL)
 
 
 ######################################
@@ -126,8 +133,32 @@ flow_interval %>%
 ######################################
 trips_play_base %>%
   ggplot() +
-  geom_density(aes(DEP_TIME, fill=DB_ID), alpha=.1) +
+  geom_density(aes(DEP_TIME, fill=DB_ID), alpha=.3) +
   facet_grid(PATH_NAME ~ .)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ######################################
 # Computes the lagged flow

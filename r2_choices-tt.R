@@ -59,16 +59,12 @@ for (s in SESSION_IDS) {
 }
 
 # computes the total number of choices by SESSION, OD, TIME INTERVAL
-tot_cases <-
+choices_tt <-
   trips_res_play %>% 
     group_by(SESSION_ID,OD, TINF, TSUP) %>%
-    summarise(N_TOT= sum(N, na.rm=TRUE) )
+    mutate(N_TOT= sum(N, na.rm=TRUE) )  %>%
+    filter(N_TOT > 0) 
 
-# Joins the total number of choices and filters 
-choices_tt <- 
-  trips_res_play %>% 
-  left_join(tot_cases) %>%
-  filter(N_TOT > 0) 
 
 choices_tt$N[is.na(choices_tt$N)] <- 0
 
@@ -101,8 +97,24 @@ choices_tt_2 %>%
   theme_bw() +
   facet_wrap(OD ~ PATH_NAME.x, scales="free")
 
+#
+choices_tt_2 %>%
+  filter(PATH_NAME.x == "R_test1_2") %>%
+  ggplot(aes(TT_DIFF, log(P_P))) +
+  geom_point() +
+  geom_smooth(method='lm', se = FALSE) +
+  theme_bw() +
+  facet_wrap(TINF ~ PATH_NAME.x, scales="free")
 
-
+#
+choices_tt_2 %>% 
+  mutate(PERIOD = ifelse(TSUP < 3000, 1,0)) %>%
+  filter(PATH_NAME.x == "R_test1_2") %>%
+  ggplot(aes(TT_DIFF, log(P_P))) +
+  geom_point() +
+  geom_smooth(method='lm', se = FALSE) +
+  theme_bw() +
+  facet_wrap(PERIOD ~ PATH_NAME.x, scales="free")
 
 
 
