@@ -83,6 +83,11 @@ trips_res_play %>%
 
 #
 
+trips_res_play %>%
+  ggplot() + 
+  geom_density(aes(MEAN_TT, fill=PATH_NAME), alpha=.3) +
+  facet_grid(OD ~.)
+
 # check!
 not_complete <- 
   trips_res_play %>%
@@ -121,22 +126,22 @@ f0 <- mFormula(CHOICE ~ 1 )
 f1 <- mFormula(CHOICE ~  MEAN_TT )  
 f2 <- mFormula(CHOICE ~ MEAN_TT + SD_TT)  
 f3 <- mFormula(CHOICE ~ -1 + MEAN_TT + total_len + ncross)  
-#f11 <- mFormula(CHOICE ~ MEAN_TT | TREATMENT)          # I CONSIDER THAT THIS IS THE CORRECT MODEL
-#f22 <- mFormula(CHOICE ~ MEAN_TT + SD_TT | TREATMENT)  # I CONSIDER THAT THIS IS THE CORRECT MODEL
+f11 <- mFormula(CHOICE ~ MEAN_TT | TREATMENT)          # I CONSIDER THAT THIS IS THE CORRECT MODEL
+f22 <- mFormula(CHOICE ~ MEAN_TT + SD_TT | TREATMENT)  # I CONSIDER THAT THIS IS THE CORRECT MODEL
 
 mod_mnlogit0 <- mlogit(f0  , data=choices_mnl_train)
 mod_mnlogit1 <- mlogit(f1  , data=choices_mnl_train)
 mod_mnlogit2 <- mlogit(f2  , data=choices_mnl_train)
 mod_mnlogit3 <- mlogit(f3  , data=choices_mnl_train)
-#mod_mnlogit11 <- mlogit(f11  , data=choices_mnl_train)
-#mod_mnlogit22 <- mlogit(f22  , data=choices_mnl_train)
+mod_mnlogit11 <- mlogit(f11  , data=choices_mnl_train)
+mod_mnlogit22 <- mlogit(f22  , data=choices_mnl_train)
 
 summary(mod_mnlogit0)
 summary(mod_mnlogit1)
 summary(mod_mnlogit2)
 summary(mod_mnlogit3)
-#summary(mod_mnlogit11)
-#summary(mod_mnlogit22)
+summary(mod_mnlogit11)
+summary(mod_mnlogit22)
 
 
 # check:
@@ -154,7 +159,8 @@ colMeans(predict(mod_mnlogit0, choices_mnl_test))
 colMeans(predict(mod_mnlogit1, choices_mnl_test))
 colMeans(predict(mod_mnlogit2, choices_mnl_test))
 colMeans(predict(mod_mnlogit3, choices_mnl_test))
-#colMeans(predict(mod_mnlogit22, choices_mnl_test))
+colMeans(predict(mod_mnlogit11, choices_mnl_test))
+colMeans(predict(mod_mnlogit22, choices_mnl_test))
 
 # Obtain the probabilities:
 # ln(p1 / p3) = b0_p1 + b1_p1 * x_i
