@@ -33,7 +33,7 @@ trips_play_choice <-
   mutate(ALT1 = NA, ALT2=NA, ALT3=NA, ALT1N=NA, ALT2N=NA, ALT3N=NA)
 
 
-h <- 600
+h <- 900
 
 
 for (i in 1:dim(trips_play_choice)[1]) {
@@ -53,7 +53,7 @@ for (i in 1:dim(trips_play_choice)[1]) {
       filter(SESSION_ID==db_, 
              PATH_NAME==OD_df_$PATH_NAME[k],
              DEP_TIME >= t - h, 
-             DEP_TIME <= t + h
+             DEP_TIME < t + 0
              ) %>%
       select(PATH_NAME, TT)
     
@@ -99,6 +99,10 @@ trips_play_choice %>%
 # For the OD1_1 and the OD2 the share of participants that chose 
 # the fastest route is greater for those with travel time information
 # (treatment t3). 
+
+
+
+
 
 trips_play_choice %>% 
   ggplot() +

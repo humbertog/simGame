@@ -69,6 +69,25 @@ trips_play <-
 # Compute the travel time 
 trips_play <- trips_play %>% mutate(TT = ARR_TIME - DEP_TIME)
 
+
+
+# OBSERVE THAT THERE IS A PROBLEM WITH THE TT (IN SOME CASES IT IS LESS THAN ONE MINUTE)
+# MAYBE IS BECAUSE THE USER REFRESH
+trips_play %>% 
+  arrange(TT) %>% 
+  select(SESSION_ID,TT) 
+
+trips_play <- 
+  trips_play %>%
+  filter(TT > 360)
+
+# THERE IS ALSO A PROBLEM WITH THE MISSIONS PLAYED AT THE BEGINNING OF THE SESSIONS:
+trips_play <-
+  trips_play %>%
+  filter(DEP_TIME >600)
+
+
+
 # Obtains the names of the routes
 trips_play$PATH_NAME <- NA
 trips_play$PATH_NAME_INI <- NA

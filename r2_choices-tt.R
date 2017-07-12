@@ -80,9 +80,8 @@ choices_tt <-
 choices_tt_2 <- 
   choices_tt %>% 
     inner_join(choices_tt, by=c("SESSION_ID", "OD", "TINF", "TSUP")) %>%
-  filter(PATH_NAME.y %in% c("R_N1", "R_test1", "R_test2"),
-         !PATH_NAME.x %in% c("R_N1", "R_test1", "R_test2")
-         )
+  filter(PATH_NAME.y %in% c("R_N1", "R_test1", "R_test2")) %>%
+  filter(!PATH_NAME.x %in% c("R_N1", "R_test1", "R_test2"))
 
 
 choices_tt_2 <-
