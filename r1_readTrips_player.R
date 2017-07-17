@@ -82,11 +82,9 @@ trips_play <-
   filter(TT > 360)
 
 # THERE IS ALSO A PROBLEM WITH THE MISSIONS PLAYED AT THE BEGINNING OF THE SESSIONS:
-trips_play <-
-  trips_play %>%
-  filter(DEP_TIME >600)
-
-
+#trips_play <-
+#  trips_play %>%
+#  filter(DEP_TIME >600)
 
 # Obtains the names of the routes
 trips_play$PATH_NAME <- NA

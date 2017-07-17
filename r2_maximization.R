@@ -81,7 +81,6 @@ for (i in 1:dim(trips_play_choice)[1]) {
 table(trips_play_choice$ALT1N)
 
 # Number of times that the fastes route was taken
-
 trips_play_choice %>%
   mutate(MAXIM1 = PATH_NAME_INI == ALT1N,
          MAXIM2 = PATH_NAME_INI == ALT2N,
@@ -108,15 +107,18 @@ trips_play_choice %>%
   ggplot() +
   geom_point(aes(ALT1, ALT2)) +
   facet_grid( .~OD) 
+  
 
 
 trips_play_choice %>% 
   ggplot() + theme_bw() +
-  geom_density(aes(ALT2 - ALT1, fill=OD), alpha=.3) 
+  geom_density(aes(ALT2 - ALT1, fill=OD), alpha=.3) +
+  labs(x="difference in travel time", y="density") 
 
 trips_play_choice %>% 
   ggplot() + theme_bw() +
-  geom_density(aes(ALT3 - ALT1, fill=OD), alpha=.3) 
+  geom_density(aes(ALT3 - ALT2, fill=OD), alpha=.3) +
+  labs(x="difference in travel time", y="density")
 # If we plot the difference in mean tt of the fastest and second fastest alternatives
 # we can see that the difference of mean tt  in the OD1_1 is larger than
 # for the OD1_2, which makes it easier to discriminate

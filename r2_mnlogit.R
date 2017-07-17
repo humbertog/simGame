@@ -19,14 +19,15 @@ source("r1_readTrips_player.R")
 load("proc_alt.RData")
 tab_d <- tab_d %>% 
   select(PATH_NAME=route, total_len, ncross) %>%
-  filter(!duplicated(PATH_NAME))
+  filter(!duplicated(PATH_NAME)) %>% 
+  mutate(ncross_km = ncross/ total_len * 1000)
 
 
 ######################################
 # Creates the data set with the choices
 ######################################
 # size of interval 
-h <- 600
+h <- 900
 
 trips_res_play <- tibble()
 
@@ -69,7 +70,8 @@ trips_res_play <-
   mutate(CHOICE=ifelse(PATH_NAME == CHOSEN_PATH, TRUE, FALSE))
 
 
-trips_res_play <- trips_res_play %>%
+trips_res_play <- 
+  trips_res_play %>%
   left_join(tab_d)
 
 # OBSERVE THAT THERE IS A PROBLEM WITH THE TT (IN SOME CASES IT IS LESS THAN ONE MINUTE)
@@ -110,38 +112,44 @@ trips_res_play <-
 ######################################
 # mnlogit
 ######################################
-od <- "OD2"
-treat <- "t3"
+od <- "OD1_2"
+treat <- c("t3")
 
 data_model <- 
   trips_res_play %>%
   filter(OD==od) %>%
-  filter(TREATMENT==treat) %>%
+  #filter(TREATMENT %in% treat) %>%
   as.data.frame()
 
-choices_mnl_train <- mlogit.data(data_model[data_model$SESSION_ID != 631,], choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
-choices_mnl_test <- mlogit.data(data_model[data_model$SESSION_ID == 631,], choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
+testIds <- sample(unique(data_model$CHOICE_ID), floor(length(unique(data_model$CHOICE_ID)) * .2))
+
+
+choices_mnl_train <- mlogit.data(data_model[!data_model$CHOICE_ID %in% testIds,], choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
+choices_mnl_test <- mlogit.data(data_model[data_model$CHOICE_ID %in% testIds,], choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
 
 f0 <- mFormula(CHOICE ~ 1 )
-f1 <- mFormula(CHOICE ~  MEAN_TT )  
-f2 <- mFormula(CHOICE ~ MEAN_TT + SD_TT)  
-f3 <- mFormula(CHOICE ~ -1 + MEAN_TT + total_len + ncross)  
-f11 <- mFormula(CHOICE ~ MEAN_TT | TREATMENT)          # I CONSIDER THAT THIS IS THE CORRECT MODEL
-f22 <- mFormula(CHOICE ~ MEAN_TT + SD_TT | TREATMENT)  # I CONSIDER THAT THIS IS THE CORRECT MODEL
+f1 <- mFormula(CHOICE ~  I(MEAN_TT/60) )  
+f2 <- mFormula(CHOICE ~ I(MEAN_TT/60) + I(SD_TT/60))  
+f3 <- mFormula(CHOICE ~ -1 + I(MEAN_TT/60) + total_len + ncross_km)  
+#f11 <- mFormula(CHOICE ~ MEAN_TT | TREATMENT)          # I CONSIDER THAT THIS IS THE CORRECT MODEL
+#f22 <- mFormula(CHOICE ~ MEAN_TT + SD_TT | TREATMENT)  # I CONSIDER THAT THIS IS THE CORRECT MODEL
+#f33 <- mFormula(CHOICE ~ MEAN_TT  + total_len + ncross_km | TREATMENT)  # I CONSIDER THAT THIS IS THE CORRECT MODEL
 
 mod_mnlogit0 <- mlogit(f0  , data=choices_mnl_train)
 mod_mnlogit1 <- mlogit(f1  , data=choices_mnl_train)
 mod_mnlogit2 <- mlogit(f2  , data=choices_mnl_train)
 mod_mnlogit3 <- mlogit(f3  , data=choices_mnl_train)
-mod_mnlogit11 <- mlogit(f11  , data=choices_mnl_train)
-mod_mnlogit22 <- mlogit(f22  , data=choices_mnl_train)
+#mod_mnlogit11 <- mlogit(f11  , data=choices_mnl_train)
+#mod_mnlogit22 <- mlogit(f22  , data=choices_mnl_train)
+#mod_mnlogit33 <- mlogit(f33  , data=choices_mnl_train)
 
 summary(mod_mnlogit0)
 summary(mod_mnlogit1)
 summary(mod_mnlogit2)
 summary(mod_mnlogit3)
-summary(mod_mnlogit11)
-summary(mod_mnlogit22)
+#summary(mod_mnlogit11)
+#summary(mod_mnlogit22)
+#summary(mod_mnlogit33)
 
 
 # check:
@@ -149,18 +157,18 @@ colMeans(predict(mod_mnlogit3, choices_mnl_train))
 apply(fitted(mod_mnlogit3, outcome = FALSE), 2, mean)
 
 #
-observed_choices_TRAIN <- table(data_model$CHOICE[data_model$SESSION_ID != 631], data_model$PATH_NAME[data_model$SESSION_ID != 631])
+observed_choices_TRAIN <- table(data_model$CHOICE[!data_model$CHOICE_ID %in% testIds], data_model$PATH_NAME[!data_model$CHOICE_ID %in% testIds])
 observed_choices_TRAIN[2,] / colSums(observed_choices_TRAIN)
 
-observed_choicesTEST <- table(data_model$CHOICE[data_model$SESSION_ID == 631], data_model$PATH_NAME[data_model$SESSION_ID == 631])
+observed_choicesTEST <- table(data_model$CHOICE[data_model$CHOICE_ID %in% testIds], data_model$PATH_NAME[data_model$CHOICE_ID %in% testIds])
 observed_choicesTEST[2,] / colSums(observed_choicesTEST)
 
 colMeans(predict(mod_mnlogit0, choices_mnl_test))
 colMeans(predict(mod_mnlogit1, choices_mnl_test))
 colMeans(predict(mod_mnlogit2, choices_mnl_test))
 colMeans(predict(mod_mnlogit3, choices_mnl_test))
-colMeans(predict(mod_mnlogit11, choices_mnl_test))
-colMeans(predict(mod_mnlogit22, choices_mnl_test))
+#colMeans(predict(mod_mnlogit11, choices_mnl_test))
+#colMeans(predict(mod_mnlogit22, choices_mnl_test))
 
 # Obtain the probabilities:
 # ln(p1 / p3) = b0_p1 + b1_p1 * x_i
