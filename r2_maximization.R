@@ -113,12 +113,19 @@ trips_play_choice %>%
 trips_play_choice %>% 
   ggplot() + theme_bw() +
   geom_density(aes(ALT2 - ALT1, fill=OD), alpha=.3) +
-  labs(x="difference in travel time", y="density") 
+  labs(x="seconds", y="density") 
+
+trips_play_choice %>%
+  group_by(OD) %>%
+  summarise(mean(ALT2 - ALT1, na.rm=TRUE), mean(ALT3 - ALT2, na.rm=TRUE))
+
+
+
 
 trips_play_choice %>% 
   ggplot() + theme_bw() +
   geom_density(aes(ALT3 - ALT2, fill=OD), alpha=.3) +
-  labs(x="difference in travel time", y="density")
+  labs(x="seconds", y="density") 
 # If we plot the difference in mean tt of the fastest and second fastest alternatives
 # we can see that the difference of mean tt  in the OD1_1 is larger than
 # for the OD1_2, which makes it easier to discriminate

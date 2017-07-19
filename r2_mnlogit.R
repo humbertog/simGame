@@ -112,27 +112,28 @@ trips_res_play <-
 ######################################
 # mnlogit
 ######################################
-od <- "OD1_2"
+od <- "OD2"
 treat <- c("t3")
 
 data_model <- 
   trips_res_play %>%
   filter(OD==od) %>%
-  #filter(TREATMENT %in% treat) %>%
+  filter(TREATMENT %in% treat) %>%
   as.data.frame()
 
-testIds <- sample(unique(data_model$CHOICE_ID), floor(length(unique(data_model$CHOICE_ID)) * .2))
+testIds <- sample(unique(data_model$CHOICE_ID), floor(length(unique(data_model$CHOICE_ID)) * .20))
 
 
-choices_mnl_train <- mlogit.data(data_model[!data_model$CHOICE_ID %in% testIds,], choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
+#choices_mnl_train <- mlogit.data(data_model[!data_model$CHOICE_ID %in% testIds,], choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
+choices_mnl_train <- mlogit.data(data_model, choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
 choices_mnl_test <- mlogit.data(data_model[data_model$CHOICE_ID %in% testIds,], choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
 
 f0 <- mFormula(CHOICE ~ 1 )
 f1 <- mFormula(CHOICE ~  I(MEAN_TT/60) )  
-f2 <- mFormula(CHOICE ~ I(MEAN_TT/60) + I(SD_TT/60))  
-f3 <- mFormula(CHOICE ~ -1 + I(MEAN_TT/60) + total_len + ncross_km)  
+f2 <- mFormula(CHOICE ~ -1 + I(MEAN_TT/60) + total_len + ncross_km)  
+f3 <- mFormula(CHOICE ~ -1 + I(MEAN_TT/60) + I(SD_TT/60) + total_len + ncross_km)  
 #f11 <- mFormula(CHOICE ~ MEAN_TT | TREATMENT)          # I CONSIDER THAT THIS IS THE CORRECT MODEL
-#f22 <- mFormula(CHOICE ~ MEAN_TT + SD_TT | TREATMENT)  # I CONSIDER THAT THIS IS THE CORRECT MODEL
+f22 <- mFormula(CHOICE ~ -1 + I(MEAN_TT/60) + total_len + ncross_km | TREATMENT)  # I CONSIDER THAT THIS IS THE CORRECT MODEL
 #f33 <- mFormula(CHOICE ~ MEAN_TT  + total_len + ncross_km | TREATMENT)  # I CONSIDER THAT THIS IS THE CORRECT MODEL
 
 mod_mnlogit0 <- mlogit(f0  , data=choices_mnl_train)
@@ -146,29 +147,53 @@ mod_mnlogit3 <- mlogit(f3  , data=choices_mnl_train)
 summary(mod_mnlogit0)
 summary(mod_mnlogit1)
 summary(mod_mnlogit2)
-summary(mod_mnlogit3)
+#summary(mod_mnlogit3)
 #summary(mod_mnlogit11)
 #summary(mod_mnlogit22)
 #summary(mod_mnlogit33)
 
 
 # check:
-colMeans(predict(mod_mnlogit3, choices_mnl_train))
-apply(fitted(mod_mnlogit3, outcome = FALSE), 2, mean)
+colMeans(predict(mod_mnlogit2, choices_mnl_train))
+apply(fitted(mod_mnlogit2, outcome = FALSE), 2, mean)
 
 #
 observed_choices_TRAIN <- table(data_model$CHOICE[!data_model$CHOICE_ID %in% testIds], data_model$PATH_NAME[!data_model$CHOICE_ID %in% testIds])
-observed_choices_TRAIN[2,] / colSums(observed_choices_TRAIN)
+(obsfreq_train <- observed_choices_TRAIN[2,] / colSums(observed_choices_TRAIN))
 
 observed_choicesTEST <- table(data_model$CHOICE[data_model$CHOICE_ID %in% testIds], data_model$PATH_NAME[data_model$CHOICE_ID %in% testIds])
-observed_choicesTEST[2,] / colSums(observed_choicesTEST)
+(obsfreq_test <- observed_choicesTEST[2,] / colSums(observed_choicesTEST))
+
+
 
 colMeans(predict(mod_mnlogit0, choices_mnl_test))
 colMeans(predict(mod_mnlogit1, choices_mnl_test))
-colMeans(predict(mod_mnlogit2, choices_mnl_test))
+(predfreq <- colMeans(predict(mod_mnlogit2, choices_mnl_test)))
 colMeans(predict(mod_mnlogit3, choices_mnl_test))
+
 #colMeans(predict(mod_mnlogit11, choices_mnl_test))
 #colMeans(predict(mod_mnlogit22, choices_mnl_test))
+
+res <-
+bind_cols(data.frame(route=names(obsfreq_train)),
+          data.frame(null=obsfreq_train),
+          data.frame(obs=obsfreq_test), 
+          data.frame(pred=predfreq)
+          )
+
+res <- 
+  res %>%
+  gather(type, perc, -route) 
+
+ggplot(res) +
+  geom_col(aes(route,perc, fill=type), position="dodge") +
+  theme_bw() 
+  
+  
+
+
+
+
 
 # Obtain the probabilities:
 # ln(p1 / p3) = b0_p1 + b1_p1 * x_i
