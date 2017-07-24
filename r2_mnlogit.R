@@ -112,8 +112,8 @@ trips_res_play <-
 ######################################
 # mnlogit
 ######################################
-od <- "OD2"
-treat <- c("t3")
+od <- "OD1_2"
+treat <- c("t1")
 
 data_model <- 
   trips_res_play %>%

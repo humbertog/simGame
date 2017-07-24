@@ -35,6 +35,14 @@ trips_play %>%
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
   
 
+trips_play %>% 
+  filter(TREATMENT == "t2", OD=="OD1_1") %>% 
+  select(PATH_NAME_INI) %>%
+  table() %>%
+  rbind(c(24,24,24)) %>%
+  chisq.test(simulate.p.value = FALSE)
+
+
 ### Tests:
 # t1 vs DEMAND 
 trips_play %>% 
