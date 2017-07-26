@@ -17,6 +17,8 @@ tab_d <- tab_d %>%
   mutate(ncross_km = ncross/ total_len * 1000)
 
 
+
+
 ######################################
 # Creates the data set with the choices
 ######################################
@@ -120,18 +122,22 @@ data_model <-
 
 f0 <- mFormula(CHOICE ~ 1 )
 f1 <- mFormula(CHOICE ~  I(MEAN_TT/60) )  
-f2 <- mFormula(CHOICE ~ -1 + I(MEAN_TT/60) + total_len + ncross_km)  
+f2 <- mFormula(CHOICE ~ -1 +I(MEAN_TT/60))  
 f3 <- mFormula(CHOICE ~ -1 + I(MEAN_TT/60) +I(SD_TT/60)+ total_len + ncross_km) 
 
 #f11 <- mFormula(CHOICE ~ MEAN_TT | TREATMENT)          # I CONSIDER THAT THIS IS THE CORRECT MODEL
 #f22 <- mFormula(CHOICE ~ MEAN_TT + SD_TT | TREATMENT)  # I CONSIDER THAT THIS IS THE CORRECT MODEL
 
 #####
-err_tests <- data.frame()
+
+obs_dists <- data.frame()
+pred_dists <- data.frame()
+pred_dists_null <- data.frame()
+
 size_boots <- .2
 unique_chID <- unique(data_model$CHOICE_ID)
 
-n_boots <- 500
+n_boots <- 1000
 for(i in 1:n_boots){
   if(i %% 50==0) {
     print(i)
@@ -147,51 +153,55 @@ for(i in 1:n_boots){
   
   mod_mnlogit0 <- mlogit(f0  , data=choices_mnl_train)
   mod_mnlogit1 <- mlogit(f1  , data=choices_mnl_train)
-  mod_mnlogit2 <- mlogit(f2  , data=choices_mnl_train, na.action = na.omit)
+  mod_mnlogit2 <- mlogit(f2  , data=choices_mnl_train, na.action = na.omit,heterosc = FALSE)
   mod_mnlogit3 <- mlogit(f3  , data=choices_mnl_train, na.action = na.omit)
   #mod_mnlogit11 <- mlogit(f11  , data=choices_mnl_train)
   #mod_mnlogit22 <- mlogit(f22  , data=choices_mnl_train)
-  
-  observed_dist <- table(testData$CHOICE, testData$PATH_NAME)[2,] / colSums(table(testData$CHOICE, testData$PATH_NAME))
   
   pred_mean_mnlogit0 <- colMeans(predict(mod_mnlogit0, choices_mnl_test))
   pred_mean_mnlogit1 <- colMeans(predict(mod_mnlogit1, choices_mnl_test))
   pred_mean_mnlogit2 <- colMeans(predict(mod_mnlogit2, choices_mnl_test))
   pred_mean_mnlogit3 <- colMeans(predict(mod_mnlogit3, choices_mnl_test))
   
+  # Observed
+  observed_dist <- table(testData$CHOICE, testData$PATH_NAME)[2,] / colSums(table(testData$CHOICE, testData$PATH_NAME))
+  obs_dists <- rbind(obs_dists, observed_dist)
+  names(obs_dists) <- unique(data_model$PATH_NAME)
   
-  len_test <- sum(testData$CHOICE)
-  err_df <- data.frame(
-    chisq.test(rbind(pred_mean_mnlogit0*len_test, observed_dist*len_test), simulate.p.value = TRUE)$p.value,
-    chisq.test(rbind(pred_mean_mnlogit1*len_test, observed_dist*len_test), simulate.p.value = TRUE)$p.value,
-    chisq.test(rbind(pred_mean_mnlogit2*len_test, observed_dist*len_test), simulate.p.value = TRUE)$p.value,
-    chisq.test(rbind(pred_mean_mnlogit3*len_test, observed_dist*len_test), simulate.p.value = TRUE)$p.value
-    
-  )
-  
-  
-  err_tests <- rbind(err_tests, err_df)
+  # Predicetd
+  pred_dists_null <- rbind(pred_dists_null, pred_mean_mnlogit0)
+  pred_dists <- rbind(pred_dists, pred_mean_mnlogit2)
+  names(pred_dists_null) <- unique(data_model$PATH_NAME)
+  names(pred_dists) <- unique(data_model$PATH_NAME)
+
 }
 
-names(err_tests) <- c("mod0","mod1","mod2","mod3")
+chisq_dist <- function(x,y){
+  sum((x-y)^2 / (1/2 * (x + y)))
+}
 
-apply(err_tests, 2, mean)
-apply(err_tests, 2, sd)
-apply(err_tests, 2, max)
-apply(err_tests, 2, min)
 
-err_tests2 <-
-  err_tests %>%
-    gather() %>%
-    arrange(value) 
+err <- data.frame(null_model=c(), prop_model=c())
+for (i in 1:n_boots) {
+  err_ <- data.frame( null_model=chisq_dist(obs_dists[i,], pred_dists_null[i,]),
+                      prop_model=chisq_dist(obs_dists[i,], pred_dists[i,]))
+  err <- rbind(err, err_)
+}
+#err
 
-ggplot(err_tests2) +
-  geom_density(aes(value, colour=key))
+mean_error <- colMeans(err)
 
-ggplot(err_tests2, aes(value, colour=key)) +
-  stat_bin(data=subset(err_tests,key=="mod0"),aes(y=cumsum(..count..)),geom="step")+
-  stat_bin(data=subset(err_tests,key=="mod1"),aes(y=cumsum(..count..)),geom="step")+
-  stat_bin(data=subset(err_tests,key=="mod2"),aes(y=cumsum(..count..)),geom="step")+
-  stat_bin(data=subset(err_tests,key=="mod3"),aes(y=cumsum(..count..)),geom="step")
+ggplot(err) +
+  geom_line(aes(seq(1:n_boots), null_model), stat = "identity", alpha=.8) +
+  geom_line(aes(seq(1:n_boots), prop_model), stat = "identity", colour="blue", alpha=.8) +
+  geom_hline(yintercept=mean_error[2], colour="red") +
+  theme_bw() +
+  ylim(0,.7) +
+  labs(x="iteration number", y="error")
+  
+  
+
+
+
 
 

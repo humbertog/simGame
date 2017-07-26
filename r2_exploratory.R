@@ -42,6 +42,15 @@ trips_play %>%
   rbind(c(24,24,24)) %>%
   chisq.test(simulate.p.value = FALSE)
 
+trips_play %>% 
+  filter(SESSION_ID==631) %>%
+  mutate(TREATMENT=ifelse(TREATMENT=="t1", "Treatment 1:NI", ifelse(TREATMENT=="t2", "Treatment 2:CMI", "Treatment 3:TTI"))) %>%
+  ggplot(aes(PATH_NAME_INI)) + 
+  geom_bar(aes(colour=OD, fill=OD)) + 
+  facet_grid(. ~ TREATMENT) +
+  theme_bw() +
+  labs(x="route name", y="count", fill = "OD", colour="OD") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
 
 ### Tests:
 # t1 vs DEMAND 

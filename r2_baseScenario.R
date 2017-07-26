@@ -13,10 +13,82 @@ source("r0_config.R")
 source("r1_readTrips_base.R")
 source("r1_readTrips_res.R")
 source("r1_readTrips_player.R")
+source("r1_readTrips_player_631.R")
 
 
 ########################################################################
-# Compares the base case with the played case
+# Compares the base case with the played case (ONLY PLAYED)
+########################################################################
+trips_play_s <-
+  trips_play_s %>%
+    mutate(CHG_PATH=ifelse(PATH_NAME==PATH_NAME_BASE,0,1)) %>%
+    mutate(BEFORE=ifelse(DEP_TIME < 3000,1,0)) %>%
+    mutate(REROUTE=ifelse(PATH_NAME==PATH_NAME_INI,0,1))
+
+trips_play_s %>%
+  ggplot() +
+  geom_point(aes(DEP_TIME_F_INI, DEP_TIME_F)) +
+  geom_abline(slope = 1, intercept=0)
+# the departure times in the played case are higher -> lower tt's?
+
+trips_play_s %>%
+  ggplot() +
+  geom_point(aes(TT_BASE, TT, colour=as.factor(CHG_PATH), shape=as.factor(BEFORE))) +
+  geom_abline(slope = 1, intercept=0)
+# The travel times of the played are lower! Check the ones with greater improvement
+
+###
+table(trips_play_s$PATH_NAME_INI)
+table(trips_play_s$PATH_NAME_BASE)
+
+table(trips_play_s$PATH_NAME_BASE,trips_play_s$PATH_NAME)
+
+trips_play_s %>%
+  filter(REROUTE==0) %>%
+  select(OD,PATH_NAME_INI, PATH_NAME_BASE) %>%
+  gather(CASE,PATH, -OD) %>%
+  ggplot() +
+  geom_bar(aes(PATH,fill=CASE),  position="dodge")
+  
+  
+trips_play_s %>%
+  select(PATH_NAME, TT,REROUTE)  %>%
+  rename(PATH=PATH_NAME) %>%
+  mutate(CASE="play") %>%
+  bind_rows(trips_play_s %>%
+              select(PATH_NAME_BASE, TT_BASE,REROUTE)  %>%
+              rename(PATH=PATH_NAME_BASE, TT=TT_BASE) %>%
+              mutate(CASE="base")) %>%
+  ggplot() +
+  geom_boxplot(aes(PATH, TT, colour=CASE))
+  
+  
+#
+trips_play_s %>%
+  select(PATH_NAME_INI, TT)  %>%
+  rename(PATH=PATH_NAME_INI) %>%
+  mutate(CASE="play") %>%
+  bind_rows(trips_play_s %>%
+              select(PATH_NAME_BASE, TT_BASE)  %>%
+              rename(PATH=PATH_NAME_BASE, TT=TT_BASE) %>%
+              mutate(CASE="base")) %>%
+  ggplot() +
+  geom_boxplot(aes(PATH, TT, colour=CASE))
+
+
+trips_play_s %>%
+  filter(abs(TT-TT_BASE) > 300,  PATH_NAME_BASE == PATH_NAME) %>%
+  select(OD, PATH_NAME_INI, PATH_NAME_BASE, PATH_NAME, DEP_TIME_F, DEP_TIME_F_INI,TT, TT_BASE) %>%
+  mutate(TTDIFF=TT_BASE-TT)
+  
+trips_play_s %>%
+#  filter(DEP_TIME <2400) %>%
+  select(OD, PATH_NAME_INI, PATH_NAME_BASE, PATH_NAME, DEP_TIME_F, DEP_TIME_F_INI,TT, TT_BASE) %>%
+  mutate(TTDIFF=TT_BASE-TT) %>%
+  arrange(TTDIFF)
+
+########################################################################
+# Compares the base case with the played case (ALL TRIPS)
 ########################################################################
 # 
 session_id <- 631
@@ -66,7 +138,7 @@ dim(trips_res_base_s)
 # Bind the data sets
 trips_play_base <- 
   bind_rows(trips_res_s, trips_res_base_s) %>%
-  filter(PATH_REROUTE == 0) %>%
+ # filter(PATH_REROUTE == 0) %>%
   filter(DEP_TIME > 900 , DEP_TIME < 4000)
 
 # CHECK
@@ -84,6 +156,17 @@ trips_play %>%
   filter(SESSION_ID == 631) %>%
   group_by(PATH_NAME) %>%
   summarise(min(DEP_TIME), max(DEP_TIME))
+
+trips_play %>% 
+  filter(SESSION_ID==631) %>%
+  mutate(TREATMENT=ifelse(TREATMENT=="t1", "Treatment 1:NI", ifelse(TREATMENT=="t2", "Treatment 2:CMI", "Treatment 3:TTI"))) %>%
+  ggplot(aes(PATH_NAME_INI)) + 
+  geom_bar(aes(colour=OD, fill=OD)) + 
+  facet_grid(. ~ TREATMENT) +
+  theme_bw() +
+  labs(x="route name", y="count", fill = "OD", colour="OD") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+
 
 ######################################
 # ROUTE TRIP DISTRIBUTION

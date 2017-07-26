@@ -112,8 +112,8 @@ trips_res_play <-
 ######################################
 # mnlogit
 ######################################
-od <- "OD1_2"
-treat <- c("t1")
+od <- "OD1_1"
+treat <- c("t3")
 
 data_model <- 
   trips_res_play %>%
@@ -126,7 +126,7 @@ testIds <- sample(unique(data_model$CHOICE_ID), floor(length(unique(data_model$C
 
 #choices_mnl_train <- mlogit.data(data_model[!data_model$CHOICE_ID %in% testIds,], choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
 choices_mnl_train <- mlogit.data(data_model, choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
-choices_mnl_test <- mlogit.data(data_model[data_model$CHOICE_ID %in% testIds,], choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
+#choices_mnl_test <- mlogit.data(data_model[data_model$CHOICE_ID %in% testIds,], choice="CHOICE", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
 
 f0 <- mFormula(CHOICE ~ 1 )
 f1 <- mFormula(CHOICE ~  I(MEAN_TT/60) )  
@@ -151,7 +151,7 @@ summary(mod_mnlogit2)
 #summary(mod_mnlogit11)
 #summary(mod_mnlogit22)
 #summary(mod_mnlogit33)
-
+lrtest(mod_mnlogit0,mod_mnlogit2)
 
 # check:
 colMeans(predict(mod_mnlogit2, choices_mnl_train))
