@@ -16,7 +16,7 @@
 #    - DEMAND (demand level used in the experiment)
 #####################################################################
 library(tidyverse)
-source("r0_config.R")
+#source("r0_config.R")
 source("r0_routes.R")
 # 
 DIR <- DIR_TRIP_SET_BASE

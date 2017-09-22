@@ -17,7 +17,7 @@
 #####################################################################
 library(tidyverse)
 library(lubridate)
-source("r0_config.R")
+#source("r0_config.R")
 source("r0_routes.R")
 
 DIR <- DIR_TRIP_SET
@@ -186,5 +186,10 @@ trips_play$OD[trips_play$ORIGIN == "T_test3"] <- "OD2"
 
 
 # Removes all other objects
-rm(list=setdiff(ls(), c("trips_res", "trips_play", "trips_res_base")))
+# rm(list=setdiff(ls(), c("trips_res", "trips_play", "trips_res_base")))
+rm(list=c("D", "trips_res_stat", "DIR", 
+                        "FNAME", "i", "inter", "orig_route_l", "orig_route_l2", "p",
+                        "path_temp", "path_temp_ini", "perc_equal", "perc_equal_t", "route_name",
+                        "route_name_idx"
+                        ))
 print(paste("Number of rows: ", dim(trips_play)[1]))       

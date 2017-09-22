@@ -13,7 +13,7 @@ source("r0_config.R")
 source("r1_readTrips_base.R")
 source("r1_readTrips_res.R")
 source("r1_readTrips_player.R")
-source("r1_readTrips_player_631.R")
+#source("r1_readTrips_player_631.R")
 
 
 ########################################################################
@@ -176,12 +176,47 @@ trips_play_base %>%
   geom_bar(aes(OD,colour=DB_ID, fill=DB_ID), position="dodge")
 
 trips_play_base %>%
+  filter(PATH_REROUTE==0) %>%
   ggplot() +
-  geom_bar(aes(PATH_NAME,colour=DB_ID, fill=DB_ID), position="dodge")
+  geom_bar(aes(PATH_NAME, fill=DB_ID), position="dodge") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(x="route name", y="count", fill = "scenario") 
 
 trips_play_base %>%
+  filter(PATH_REROUTE==0) %>%
   ggplot() +
-  geom_boxplot(aes(PATH_NAME, TT, colour=DB_ID), position="dodge")
+  geom_boxplot(aes(PATH_NAME, TT, fill=DB_ID),alpha=.5, position="dodge") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(x="route name", y="travel time distribution (seconds)", fill = "scenario") 
+
+
+######################################
+# DEPARTURE TIMES
+######################################
+trips_play_base %>%
+  ggplot() +
+  geom_density(aes(DEP_TIME, colour=DB_ID)) 
+
+
+trips_play_base %>%
+  ggplot(aes(DEP_TIME, TT, colour=DB_ID)) +
+  geom_point(alpha=.5) +
+  geom_smooth(se=FALSE)
+
+
+trips_play_base %>%
+  filter(PATH_NAME=="R_N1") %>%
+  ggplot() +
+  geom_density(aes(DEP_TIME, colour=DB_ID)) 
+
+
+trips_play_base %>%
+  filter(PATH_NAME=="R_N1") %>%
+  ggplot(aes(DEP_TIME, TT, colour=DB_ID)) +
+  geom_point(alpha=.5) +
+  geom_smooth(se=FALSE)
 
 ######################################
 # TT distributions

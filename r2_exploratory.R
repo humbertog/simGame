@@ -19,7 +19,7 @@ source("r1_readTrips_player.R")
 ### Choice distributions
 trips_play %>% ggplot(aes(PATH_NAME_INI)) + 
   geom_bar(aes(colour=OD, fill=OD)) + 
-  facet_grid(DEMAND ~ TREATMENT) +
+  facet_grid(. ~ TREATMENT) +
   theme_bw() +
   labs(x="route name", y="count", fill = "OD name", colour="OD name") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
@@ -36,7 +36,7 @@ trips_play %>%
   
 
 trips_play %>% 
-  filter(TREATMENT == "t2", OD=="OD1_1") %>% 
+  filter(TREATMENT == "t3", OD=="OD1_1") %>% 
   select(PATH_NAME_INI) %>%
   table() %>%
   rbind(c(24,24,24)) %>%
@@ -55,7 +55,7 @@ trips_play %>%
 ### Tests:
 # t1 vs DEMAND 
 trips_play %>% 
-  filter(TREATMENT == "t2") %>% 
+  filter(TREATMENT == "t3") %>% 
   select(DEMAND, PATH_NAME_INI) %>%
   table() %>%
   chisq.test(simulate.p.value = TRUE)
@@ -120,7 +120,7 @@ trips_res %>%
   filter(!PATH_REROUTE) %>%
   ggplot() +
   geom_boxplot(aes(DEP_TIME_INTERVAL, TT)) +
-  facet_grid(DEMAND ~ PATH_NAME) +
+  facet_grid(. ~ PATH_NAME) +
   theme_bw() +
   theme(axis.text.x=element_text(angle=90, hjust=1))
 

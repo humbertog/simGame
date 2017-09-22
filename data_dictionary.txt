@@ -1,6 +1,8 @@
 Data dictionary:
 ####################################
 trips_user.csv:
+Contains only only the trips that were played by users. This trips are also contained
+in the res_XXX_proc files
 ####################################
 ### ORIGINAL:
 
@@ -30,6 +32,9 @@ ARR_TIME_INI                                            (This may be taken from 
 
 ####################################
 resXXX_proc.csv
+File with all the vehicles in the played routes. It include the played and non played vehicles.
+This file is used to have a better estimation of the travel time distributions in the 
+played paths.
 ####################################
 VEH_ID
 VEH_TYPE
@@ -67,5 +72,8 @@ PATH_REROUTE       Always = 0
 OD
 TT
 
-
+####################################
+traj_od.csv 
+Contains the information of all the vehicles in the routes for the SG, but in the base scenario
+####################################
 

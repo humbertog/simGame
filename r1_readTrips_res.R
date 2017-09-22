@@ -18,11 +18,11 @@
 #    - DEMAND (demand level used in the experiment)
 #####################################################################
 library(tidyverse)
-source("r0_config.R")
+#source("r0_config.R")
 
 DIR <- DIR_TRIP_SET
 
-SESSION_IDS <- c(625, 626, 628, 629, 630, 631, 633, 634)
+SESSION_IDS <- SESSION_IDS
 
 # Loop to read files and assign the session ID's
 # The data is then joined into one DF
@@ -93,6 +93,14 @@ trips_res <-
                                                 "R_test1_r2", "R_test2_3_r2", "R_test1_3_r1", 
                                                 "R_test2_r1", "R_test1_3_r2", "R_test2_r2", "other"),1,0) )
 
+trips_res$PATH_NAME_INIT <- trips_res$PATH_NAME
+trips_res$PATH_NAME_INIT[trips_res$PATH_NAME %in% c("R_test1_2_r1", "R_test1_2_r2")] <- "R_test1_2"
+trips_res$PATH_NAME_INIT[trips_res$PATH_NAME %in% c("R_test1_r1", "R_test1_r2")] <- "R_test1"
+trips_res$PATH_NAME_INIT[trips_res$PATH_NAME %in% c("R_test1_3_r1", "R_test1_3_r2")] <- "R_test1_2"
+
+trips_res$PATH_NAME_INIT[trips_res$PATH_NAME %in% c("R_test2_r1", "R_test2_r2")] <- "R_test2_2"
+trips_res$PATH_NAME_INIT[trips_res$PATH_NAME %in% c("R_test2_2_r1", "R_test2_2_r2")] <- "R_test2_2"
+trips_res$PATH_NAME_INIT[trips_res$PATH_NAME %in% c("R_test2_3_r1", "R_test2_3_r2")] <- "R_test2_2"
 
 
 # Adds the name of the OD
@@ -110,5 +118,11 @@ trips_res$OD[trips_res$ORIGIN == "E_test3"] <- "OD2"
 #  geom_point(aes(colour=as.factor(SESSION_ID)),alpha=.3)
 
 # Removes all other objects
-rm(list=setdiff(ls(), c("trips_res", "trips_play", "trips_res_base")))
+# rm(list=setdiff(ls(), c("trips_res", "trips_play", "trips_res_base")))
 
+rm(list=c("res_t", "s_stats", "trips_res_stat", "DIR",
+          "i", "inter", "orig_route_l", "orig_route_l2", "p",
+          "path_temp", "path_temp_ini", "perc_equal", "perc_equal_t", "route_name",
+          "route_name_idx", "SESSION_IDS", "s", "res_fname"
+))
+print(paste("Number of rows: ", dim(trips_res)[1]))   
