@@ -1,7 +1,7 @@
 #####################################################################
 # We fit a multinomial logistic model to the choices. 
 # The variables that we take into accout are:
-# - the mean travel time in each of the alternatives
+# - the mean travel time in each of the alternatives at the moment that the decision was made
 # - the standard deviation of the travel time
 # - the treatment to which the player belongs
 # The mean tt and the sdcorrespond to those of the travel time distributions

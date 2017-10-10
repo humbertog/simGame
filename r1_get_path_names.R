@@ -1,8 +1,5 @@
 library(tidyverse)
 
-
-
-
 get_path_names <- function(df_res) {
   # Obtains the names of the routes
   df_res <- df_res %>% mutate(PATH_NAME = NA)
