@@ -1,8 +1,18 @@
+#####################################################################
+# Plots the travel time distributions for the different routes
+# resulting from the symulation previous to the experiments
+# IN: traj_od.csv files
+#     these files contain the trajectories of all the trips in the
+#     routes that we are interested in.
+#     The files are obtained using parser.py and make_res_file.py 
+#####################################################################
+
+
 library(tidyverse)
 
 # Reads the routes
-source("r0_routes.R")
-source("r1_get_path_names.R")
+source("R_dat/dat_routes.R")
+source("R_functions/fun_getPathNames.R")
 
 # Read files: output of symuvia
 KIND <- "D1A2_VP5"
