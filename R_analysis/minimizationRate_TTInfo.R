@@ -9,7 +9,7 @@ library(tidyverse)
 
 source("r0_config.R")
 source("R_readData/readTrips_player.R")
-source("R_readData/readTrips_res.R")
+#source("R_readData/readTrips_res.R")
 source("R_readData/readTTInfo.R")
 
 # Drop some of the columns to avoid confussion
@@ -31,7 +31,7 @@ choices <-
 
 # We create the PERIOD variable 
 # It is the period in which the trip started and the informed TT during this period
-cut_breaks <- seq(0, max(infoTT$PERIOD_FIN)-min(infoTT$PERIOD_INI) , 600)
+cut_breaks <- seq(0, max(infoTT$PERIOD_FIN)-min(infoTT$PERIOD_INI) , 900)
 
 infoTT$PERIOD_INI_F <- infoTT$PERIOD_INI - min(infoTT$PERIOD_INI)
 infoTT$PERIOD_FIN_F <- infoTT$PERIOD_FIN - min(infoTT$PERIOD_INI)
@@ -67,7 +67,7 @@ tail(choices)
 ############################
 # Minimization rate
 ############################
-# 
+#### 
 minimization_rat <- choices %>% 
   group_by(OD, TREATMENT, order) %>%
   summarise(minimization_n=sum(CHOSEN)) %>%
@@ -77,14 +77,36 @@ minimization_rat <- choices %>%
   
 print(minimization_rat, n=100)
 
-# Number of times the route was fastes, second fastest and slowest 
+### Number of times the route was fastes, second fastest and slowest 
 choices %>%
   group_by(OD, PATH_NAME, order) %>%
   summarise(n_min=n()) 
 
+#### informed travel time difference 
+infoTT_l <- infoTT %>%
+  select(-PERIOD_INI, -PERIOD_FIN, -PERIOD_INI_F, -PERIOD_FIN_F) %>%
+  group_by(DEMAND,PERIOD, OD, ROUTE) %>%
+  summarise(n=n(), TT_INFO=mean(TT_INFO)) %>%
+  arrange(DEMAND,PERIOD, OD, TT_INFO) %>%
+  mutate(order = 1:3)
+
+infoTT_joint <- infoTT_l %>%
+  left_join(infoTT_l, by=c("DEMAND", "PERIOD", "OD")) %>%
+  mutate(diff=TT_INFO.y - TT_INFO.x)
+
+# diff 1 vs 2  
+infoTT_joint %>%
+  filter(order.x ==1, order.y ==2) %>%
+  ggplot() +
+  geom_histogram(aes(diff, fill=OD), position = "dodge",binwidth=60) +
+  scale_x_continuous(breaks = seq(0,600,60))
 
 
-
+infoTT_joint %>%
+  filter(order.x ==2, order.y ==3) %>%
+  ggplot() +
+  geom_histogram(aes(diff, fill=OD), position = "dodge",binwidth=60) +
+  scale_x_continuous(breaks = seq(0,600,60))
 
 
 

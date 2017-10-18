@@ -2,7 +2,7 @@
 # Function that obtains the names of the routes from the route_list file
 #################################################
 
-getPathNames <- function(path, path_list) {
+getPathNames <- function(path, path_list, simmilarity=.8) {
   # path: a vector with the path in character format
   # path_list: the list with the names of the routes and a vector with the sequence of links in the path
   path_names <- c()
@@ -28,7 +28,7 @@ getPathNames <- function(path, path_list) {
     
     #print(paste(as.character(max(perc_equal)), route_name))
     #path_max_p <- c(path_max_p, max(perc_equal))
-    if (length(route_name) == 1 & max(perc_equal) > .8) {
+    if (length(route_name) == 1 & max(perc_equal) > simmilarity) {
       route_name < names(orig_route_l2)[route_name_idx][1]
     }
     else {
@@ -59,5 +59,15 @@ getODNames <- function(origin, destination) {
   od_names[origin %in% c("E_test1", "T_test1")] <- "OD1_1"
   od_names[origin %in% c("E_test2", "T_test2")] <- "OD1_2"
   od_names[origin %in% c("E_test3", "T_test3")] <- "OD2"
+  od_names
+}
+
+
+getODNames_fromPathNames <- function(path_name) {
+  # origin and destination. Two vectors with the origin link and the destination link
+  od_names <- rep(NA, length(path_name))
+  od_names[path_name %in% c("R_test1", "R_test1_2", "R_test1_3")] <- "OD1_1"
+  od_names[path_name %in% c("R_test2", "R_test2_2", "R_test2_3")] <- "OD1_2"
+  od_names[path_name %in% c("R_N1", "R_N2", "R_N3")] <- "OD2"
   od_names
 }

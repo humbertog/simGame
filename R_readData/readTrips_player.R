@@ -41,31 +41,31 @@ trips_play <- trips_play %>% rename(SESSION_ID = sessionId,
 
 
 ###### Format dep and arr times
-trips_play <- trips_play %>% 
-  mutate(DEP_TIME =-23400 + 
-           hour(DEP_TIME_F) * 3600 + 
-           minute(DEP_TIME_F) * 60 + 
-           second(DEP_TIME_F), 
-         ARR_TIME=-23400 + 
-           hour(ARR_TIME_F) * 3600 + 
-           minute(ARR_TIME_F) * 60 + 
-           second(ARR_TIME_F),
-         DEP_TIME_INI =-23400 + 
-           hour(DEP_TIME_F_INI) * 3600 + 
-           minute(DEP_TIME_F_INI) * 60 + 
-           second(DEP_TIME_F_INI),
-         ARR_TIME_INI =-23400 + 
-           hour(ARR_TIME_F_INI) * 3600 + 
-           minute(ARR_TIME_F_INI) * 60 + 
-           second(ARR_TIME_F_INI)
-  )
+# trips_play <- trips_play %>% 
+#   mutate(DEP_TIME =-23400 + 
+#            hour(DEP_TIME_F) * 3600 + 
+#            minute(DEP_TIME_F) * 60 + 
+#            second(DEP_TIME_F), 
+#          ARR_TIME=-23400 + 
+#            hour(ARR_TIME_F) * 3600 + 
+#            minute(ARR_TIME_F) * 60 + 
+#            second(ARR_TIME_F),
+#          DEP_TIME_INI =-23400 + 
+#            hour(DEP_TIME_F_INI) * 3600 + 
+#            minute(DEP_TIME_F_INI) * 60 + 
+#            second(DEP_TIME_F_INI),
+#          ARR_TIME_INI =-23400 + 
+#            hour(ARR_TIME_F_INI) * 3600 + 
+#            minute(ARR_TIME_F_INI) * 60 + 
+#            second(ARR_TIME_F_INI)
+#   )
 
 trips_play <- 
   trips_play %>%
-  mutate(DEP_TIME = as.integer(DEP_TIME),
-         ARR_TIME = as.integer(ARR_TIME),
-         DEP_TIME_INI = as.integer(DEP_TIME_INI),
-         ARR_TIME_INI = as.integer(ARR_TIME_INI)
+  mutate(DEP_TIME = as.integer(DEP_TIME_F),
+         ARR_TIME = as.integer(ARR_TIME_F),
+         DEP_TIME_INI = as.integer(DEP_TIME_F_INI),
+         ARR_TIME_INI = as.integer(ARR_TIME_F_INI)
   )
 
 ###### Compute the travel time 
@@ -86,7 +86,7 @@ trips_play <-
 
 ###### Route names 
 # Obtains the names of the routes
-trips_play$PATH_NAME <- getPathNames(trips_play$PATH, orig_route_l2)
+trips_play$PATH_NAME <- getPathNames(trips_play$PATH, orig_route_l2, simmilarity=.6)
 trips_play$PATH_NAME_INI <- getIniPathName(trips_play$PATH_NAME)
 if (sum(is.na(trips_play$PATH_NAME)) > 0) warning(paste("PATH_NAME could not be computed for all trips"))
 
@@ -116,7 +116,9 @@ for(s in unique(trips_play$SESSION_ID)) {
 }
 
 ###### Adds treatment
-trips_play <- trips_play %>%  mutate(TREATMENT = substr(trips_play$PLAYER_ID, 9,10))
+nchar <- length(strsplit(trips_play$PLAYER_ID[1] , split='')[[1]])
+
+trips_play <- trips_play %>%  mutate(TREATMENT = substr(trips_play$PLAYER_ID, nchar-1,nchar))
 
 
 ###### Removes all other objects

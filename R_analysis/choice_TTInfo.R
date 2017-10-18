@@ -14,8 +14,9 @@ library(mlogit)
 # Read the res_files
 source("r0_config.R")
 source("R_readData/readTrips_player.R")
-source("R_readData/readTrips_res.R")
+#source("R_readData/readTrips_res.R")
 source("R_readData/readTTInfo.R")
+source("R_functions/fun_rename.R")
 
 # Reads the alternative attributes
 alternative_attributes <- read_csv("R_data/alternative_attributes.csv")
@@ -43,13 +44,11 @@ choices <-
 
 # We create the PERIOD variable 
 # It is the period in which the trip started and the informed TT during this period
-cut_breaks <- seq(0, max(infoTT$PERIOD_FIN)-min(infoTT$PERIOD_INI) , 600)
+ini_period <- min(infoTT$PERIOD_INI)
+fin_period <- max(infoTT$PERIOD_FIN)
 
-infoTT$PERIOD_INI_F <- infoTT$PERIOD_INI - min(infoTT$PERIOD_INI)
-infoTT$PERIOD_FIN_F <- infoTT$PERIOD_FIN - min(infoTT$PERIOD_INI)
-infoTT$PERIOD <- cut(infoTT$PERIOD_INI_F, cut_breaks, right=FALSE,include.lowest = TRUE)
-
-choices$PERIOD <- cut(choices$DEP_TIME, cut_breaks, right=FALSE,include.lowest = TRUE)
+infoTT$PERIOD <- getPeriod(infoTT$PERIOD_INI, ini_time = ini_period, fin_time = fin_period, 900)
+choices$PERIOD <- getPeriod(choices$DEP_TIME, ini_time = ini_period, fin_time = fin_period, 900)
 
 
 # Join the variables
@@ -66,10 +65,19 @@ choices <- choices %>%
   select(-PATH_NAME.x) %>%
   rename(PATH_NAME=PATH_NAME.y)
 
+
+# Formats
+
+infoTT$ROUTE <- renameRoutes(infoTT$ROUTE)
+infoTT$OD <- renameOD(infoTT$OD)
+
+choices$PATH_NAME <- renameRoutes(choices$PATH_NAME)
+choices$OD <- renameOD(choices$OD)
+
 #####################################################################
 # MODELS
 #####################################################################
-od <- "OD2"
+od <- "O1D1"
 treat <- "t3"
 
 data_model <- 
@@ -97,6 +105,8 @@ summary(mod_mnlogit1)
 summary(mod_mnlogit1.1)
 summary(mod_mnlogit2)
 
+lapply(list(mod_mnlogit0, mod_mnlogit1, mod_mnlogit1.1, mod_mnlogit2), function(x) logLik(x))
+lapply(list(mod_mnlogit0, mod_mnlogit1, mod_mnlogit1.1, mod_mnlogit2), function(x) AIC(x))
 
 ### Fit random coeff - normal
 mod_mnlogit1_rp <- mlogit(f1  , data=choices_mnl, rpar = c('I(TT_INFO/60)'="n"))
@@ -106,6 +116,9 @@ mod_mnlogit2_rp <- mlogit(f2  , data=choices_mnl, rpar = c('I(TT_INFO/60)'="n"))
 summary(mod_mnlogit1_rp)
 summary(mod_mnlogit1.1_rp)
 summary(mod_mnlogit2_rp)
+
+lapply(list(mod_mnlogit1_rp, mod_mnlogit1.1_rp, mod_mnlogit2_rp), function(x) logLik(x))
+lapply(list(mod_mnlogit1_rp, mod_mnlogit1.1_rp, mod_mnlogit2_rp), function(x) AIC(x))
 
 ### Fit probit
 mod_probit0 <- mlogit(f0  , data=choices_mnl, probit=TRUE)
@@ -117,6 +130,30 @@ summary(mod_probit0)
 summary(mod_probit1)
 summary(mod_probit1.1)
 summary(mod_probit2)
+
+lapply(list(mod_probit0, mod_probit1, mod_probit1.1, mod_probit2), function(x) logLik(x))
+lapply(list(mod_probit0, mod_probit1, mod_probit1.1, mod_probit2), function(x) AIC(x))
+
+
+
+# We see the predictions
+pred_mnlogit <- predict(mod_mnlogit1, newdata = choices_mnl)
+pred_rc <- predict(mod_mnlogit1_rp, newdata = choices_mnl)
+pred_probit <- predict(mod_probit1, newdata = choices_mnl)
+
+
+ggplot() +
+  geom_col(aes(route, observed, fill="observed"), alpha=.25, data=data.frame(route=names(mod_mnlogit1$freq), observed=c(mod_mnlogit1$freq / sum(mod_mnlogit1$freq)))) +
+  geom_col(aes(route, mean, colour="mnlogit"), alpha=0 ,data=data.frame(route=colnames(pred_mnlogit), mean=colMeans(pred_mnlogit)))+
+  geom_col(aes(route, mean, colour="rand_coeff"), alpha=0 ,data=data.frame(route=colnames(pred_rc), mean=colMeans(pred_rc)))+
+  geom_col(aes(route, mean, colour="probit"), alpha=0, data=data.frame(route=colnames(pred_probit), mean=colMeans(pred_probit)))+ 
+  scale_color_manual(values=c("observed"="red", "mnlogit"="blue","rand_coeff"="green", "probit"="black")) +
+  ylab("relative frequency") +
+  theme_bw()
+  
+ggsave(paste(od, "_pred.png", sep=""),  width = 16, height = 12, units = "cm",
+       dpi = 300, limitsize = TRUE)
+
 
 
 
