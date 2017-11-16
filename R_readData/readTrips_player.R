@@ -20,6 +20,7 @@ library(lubridate)
 
 source("R_data/dat_routes.R")
 source("R_functions/fun_getPathNames.R")
+source("R_functions/fun_rename.R")
 
 DIR <- DIR_TRIP_SET
 FNAME <- FILE_TRIPS_PLAYER
@@ -120,6 +121,10 @@ nchar <- length(strsplit(trips_play$PLAYER_ID[1] , split='')[[1]])
 
 trips_play <- trips_play %>%  mutate(TREATMENT = substr(trips_play$PLAYER_ID, nchar-1,nchar))
 
+###### Renames
+trips_play$PATH_NAME <- renameRoutes(trips_play$PATH_NAME)
+trips_play$PATH_NAME_INI <- renameRoutes(trips_play$PATH_NAME_INI)
+trips_play$OD <- renameOD(trips_play$OD)
 
 ###### Removes all other objects
 trips_play <- trips_play %>% select(-PATH)

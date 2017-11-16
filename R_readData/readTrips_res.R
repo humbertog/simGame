@@ -18,16 +18,16 @@
 #    - DEMAND (demand level used in the experiment)
 #####################################################################
 library(tidyverse)
+
 source("R_data/dat_routes.R")
 source("R_functions/fun_getPathNames.R")
+source("R_functions/fun_rename.R")
 
 DIR <- DIR_TRIP_SET
 SESSION_IDS <- SESSION_IDS
 
 # Loop to read files and assign the session ID's
 # The data is then joined into one DF
-
-
 trips_res_stat <- read_delim(paste(DIR, FILE_STATS, sep="/"), delim=";")
 trips_res <- tibble()
 
@@ -68,6 +68,11 @@ trips_res <-
 ###### Obtains the OD name 
 trips_res$OD <- getODNames(trips_res$ORIGIN, trips_res$DEST)
 
+# RENAMES
+trips_res$PATH_NAME <- renameRoutes(trips_res$PATH_NAME)
+trips_res$PATH_NAME_INI <- renameRoutes(trips_res$PATH_NAME_INI)
+
+trips_res$OD <- renameOD(trips_res$OD)
 
 ###### 
 trips_res <- trips_res %>% select(-PATH)

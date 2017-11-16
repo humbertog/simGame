@@ -11,6 +11,12 @@ for (i in 1:length(FILES_INFOTT)) {
 
 # OD names
 infoTT$OD <- getODNames_fromPathNames(infoTT$ROUTE)
+infoTT$PERIOD_INI_F <- seconds_to_period(infoTT$PERIOD_INI)
+infoTT$PERIOD_FIN_F <- seconds_to_period(infoTT$PERIOD_FIN)
+
+# Renames
+infoTT$ROUTE <- renameRoutes(infoTT$ROUTE)
+infoTT$OD <- renameOD(infoTT$OD)
 
 
 # it looks like the times have been converted in seconds

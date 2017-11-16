@@ -12,7 +12,7 @@ library(tidyverse)
 library(mlogit)
 
 # Read the res_files
-source("r0_config.R")
+source("r0_config_201704.R")
 source("R_readData/readTrips_player.R")
 #source("R_readData/readTrips_res.R")
 source("R_readData/readTTInfo.R")
@@ -47,8 +47,11 @@ choices <-
 ini_period <- min(infoTT$PERIOD_INI)
 fin_period <- max(infoTT$PERIOD_FIN)
 
-infoTT$PERIOD <- getPeriod(infoTT$PERIOD_INI, ini_time = ini_period, fin_time = fin_period, 900)
-choices$PERIOD <- getPeriod(choices$DEP_TIME, ini_time = ini_period, fin_time = fin_period, 900)
+interval <- (infoTT$PERIOD_FIN - infoTT$PERIOD_INI)[1]
+
+
+infoTT$PERIOD <- getPeriod(infoTT$PERIOD_INI, ini_time = ini_period, fin_time = fin_period, interval)
+choices$PERIOD <- getPeriod(choices$DEP_TIME, ini_time = ini_period, fin_time = fin_period, interval)
 
 
 # Join the variables
@@ -77,7 +80,7 @@ choices$OD <- renameOD(choices$OD)
 #####################################################################
 # MODELS
 #####################################################################
-od <- "O1D1"
+od <- "O3D2"
 treat <- "t3"
 
 data_model <- 

@@ -114,7 +114,7 @@ trips_play %>%
   labs(x="route name", y="count", fill = "OD", colour="OD") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
 
-ggsave("choiceDist.png",  width = 20, height = 10, units = "cm",
+ggsave("choiceDist_allSessions.png",  width = 20, height = 10, units = "cm",
        dpi = 300, limitsize = TRUE)
 
 # The informed travel times in each route
@@ -128,7 +128,7 @@ infoTT %>%
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
 
-ggsave("informedTT.png",  width = 20, height = 16, units = "cm",
+ggsave("informedTT_allSessions.png",  width = 20, height = 16, units = "cm",
        dpi = 300, limitsize = TRUE)
 
 # ts
