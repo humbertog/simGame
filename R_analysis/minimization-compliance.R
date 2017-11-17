@@ -18,7 +18,7 @@ source("R_functions/fun_rename.R")
 # Drop some of the columns to avoid confussion
 trips_play$PATH_NAME <- trips_play$PATH_NAME_INI
 trips_play <- trips_play %>% 
-  select(-DEP_TIME_F_INI, -ARR_TIME_F_INI, -DEP_TIME_INI, -ARR_TIME_INI, -PATH_NAME_INI, -PLAYER_ID, -PATH_REROUTE)
+  select(-DEP_TIME_F_INI, -ARR_TIME_F_INI, -DEP_TIME_INI, -ARR_TIME_INI, -PATH_NAME_INI, -PATH_REROUTE)
 
 # Remove the rerouting routes
 trips_res <- 
@@ -32,7 +32,7 @@ od_route <- unique(trips_play[,c("OD", "PATH_NAME")])
 
 choices <- 
   trips_play %>% 
-  select(SESSION_ID, CHOICE_ID, DEMAND, TREATMENT, OD, PATH_NAME, DEP_TIME, ARR_TIME, TT) %>%
+  select(SESSION_ID,PLAYER_ID, CHOICE_ID, DEMAND, TREATMENT, OD, PATH_NAME, DEP_TIME, ARR_TIME, TT) %>%
   full_join(od_route, by="OD")
 
 # We create the PERIOD variable 
@@ -174,6 +174,37 @@ ggplot() +
 # interpretacion: de n veces que la ruta j fue la de minimo tiempo informado,
 # m veces se escogio
 
+### See compliance by player
+# We count the proportion of the decisions that players were complaint
+compliance_rate_player <- 
+  choices %>% 
+  filter(TREATMENT == 't3', CHOSEN==TRUE) %>%
+  group_by(PLAYER_ID) %>%
+  summarise(n=n(), compliance_n=sum(order_info_tt ==1)) %>%
+  mutate(compliance_rate=compliance_n/n)
+  
+  
+compliance_rate_player %>% 
+  ggplot() +
+  geom_histogram(aes(compliance_rate), binwidth=.2, center=.1) +
+  xlab("compliance rate") +
+  ylab("count") +
+  theme_bw() 
+  
+# count number of players which comply and dont:   x > 0.5 and x < 0.5
+sum(compliance_rate_player$compliance_rate >= 0.6)
+sum(compliance_rate_player$compliance_rate <= 0.4)
+sum(compliance_rate_player$compliance_rate > 0.4 & compliance_rate_player$compliance_rate < 0.6) 
+
+# Number of different decision problems
+choices %>% 
+  filter(TREATMENT == 't3', CHOSEN==TRUE) %>%
+  group_by(PLAYER_ID) %>%
+  summarise(Unique_Elements = n_distinct(OD)) %>%
+  group_by(Unique_Elements) %>%
+  summarise(n=n())
+
+
 ############################
 # Minimum time coincides with minimum informed travel time
 ############################
@@ -195,6 +226,44 @@ choices %>%
   summarise(mean_tt = mean(MEAN_TT),
             RMSE = sqrt(mean( (TT_INFO-MEAN_TT)^2 ))) %>%
   mutate(RMSE / mean_tt)
+
+### Now we see the order
+order_mean_info <- 
+  choices %>%
+    distinct(SESSION_ID, OD, PATH_NAME, PERIOD, MEAN_TT, TT_INFO, order_info_tt, order_tt) 
+
+order_tt <- table(order_mean_info$order_tt, order_mean_info$order_info_tt, order_mean_info$OD) 
+
+sum(diag(order_tt[, ,1])) /sum(order_tt[, ,1])
+sum(diag(order_tt[, ,2])) /sum(order_tt[, ,2])
+sum(diag(order_tt[, ,3])) /sum(order_tt[, ,3])
+
+choices %>%
+  group_by(OD, order_info_tt, order_tt) %>%
+  summarise(n=n_distinct(CHOICE_ID)) %>%
+  filter(order_info_tt==1) %>%
+  group_by(OD) %>%
+  mutate(n_tot=sum(n), n/n_tot)
+  
+
+
+choices %>%
+  group_by(OD, order_tt, order_info_tt) %>%
+  summarise(n=n_distinct(CHOICE_ID)) %>%
+  filter(order_info_tt==1) %>%
+  group_by(OD) %>%
+  mutate(n_tot=sum(n), n/n_tot)
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+
 
 choices %>%
   filter(order_tt ==1) %>%
