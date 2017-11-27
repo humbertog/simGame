@@ -18,14 +18,18 @@ source("R_readData/readTrips_player.R")
 source("R_readData/readTTInfo.R")
 source("R_functions/fun_rename.R")
 
-# Reads the alternative attributes
+
+# Read the alternative attributes
 alternative_attributes <- read_csv("R_data/alternative_attributes.csv")
 
+# Read the compliance 
+compliance <- read_csv("R_data/compliance_player_exp20170412.csv")
+compliance <- compliance %>% select(PLAYER_ID, compliance_rate)
 
 # Drop some of the columns to avoid confussion
 trips_play$PATH_NAME <- trips_play$PATH_NAME_INI
 trips_play <- trips_play %>% 
-  select(-DEP_TIME_F_INI, -ARR_TIME_F_INI, -DEP_TIME_INI, -ARR_TIME_INI, -PATH_NAME_INI, -PLAYER_ID, -PATH_REROUTE)
+  select(-DEP_TIME_F_INI, -ARR_TIME_F_INI, -DEP_TIME_INI, -ARR_TIME_INI, -PATH_NAME_INI, -PATH_REROUTE)
 
 alternative_attributes <- alternative_attributes %>%
   select(-ncross)
@@ -37,7 +41,7 @@ od_route <- unique(trips_play[,c("OD", "PATH_NAME")])
 
 choices <- 
   trips_play %>% 
-    select(CHOICE_ID, DEMAND, TREATMENT, OD, PATH_NAME, DEP_TIME, ARR_TIME, TT) %>%
+    select(CHOICE_ID, PLAYER_ID, DEMAND, TREATMENT, OD, PATH_NAME, DEP_TIME, ARR_TIME, TT) %>%
     full_join(od_route, by="OD")
 
 
@@ -61,6 +65,12 @@ choices <-
             by=c("DEMAND"="DEMAND", "PATH_NAME.y"="ROUTE", "PERIOD"="PERIOD")) %>%
   left_join(alternative_attributes, by=c("PATH_NAME.y"="PATH_NAME"))
 
+# join the compliance
+choices <-
+  choices %>%
+    left_join(compliance, by= "PLAYER_ID")
+  
+
 
 # Obtains chosen route
 choices <- choices %>% 
@@ -68,14 +78,6 @@ choices <- choices %>%
   select(-PATH_NAME.x) %>%
   rename(PATH_NAME=PATH_NAME.y)
 
-
-# Formats
-
-infoTT$ROUTE <- renameRoutes(infoTT$ROUTE)
-infoTT$OD <- renameOD(infoTT$OD)
-
-choices$PATH_NAME <- renameRoutes(choices$PATH_NAME)
-choices$OD <- renameOD(choices$OD)
 
 #####################################################################
 # MODELS
@@ -87,6 +89,7 @@ data_model <-
   choices %>%
   filter(OD==od) %>%
   filter(TREATMENT==treat) %>%
+  filter(compliance_rate>.5) %>%
   as.data.frame()
 
 choices_mnl <- mlogit.data(data_model, choice="CHOSEN", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
@@ -96,43 +99,66 @@ f0 <- mFormula(CHOSEN ~ 1 )
 f1 <- mFormula(CHOSEN ~  -1+ I(TT_INFO/60) )  
 f1.1 <- mFormula(CHOSEN ~  1 + I(TT_INFO/60) )  
 f2 <- mFormula(CHOSEN ~ -1 + I(TT_INFO/60) + total_len + ncross_km) 
+f3 <- mFormula(CHOSEN ~  I(TT_INFO/60) | -1 + compliance_rate ) 
+
+f4 <- mFormula(CHOSEN ~  I(TT_INFO/60) +total_len + ncross_km | -1 + compliance_rate  ) 
 
 ### Fit mnlogit
 mod_mnlogit0 <- mlogit(f0  , data=choices_mnl)
 mod_mnlogit1 <- mlogit(f1  , data=choices_mnl)
 mod_mnlogit1.1 <- mlogit(f1.1  , data=choices_mnl)
 mod_mnlogit2 <- mlogit(f2  , data=choices_mnl)
+mod_mnlogit3 <- mlogit(f3  , data=choices_mnl)
+mod_mnlogit4 <- mlogit(f4  , data=choices_mnl)
 
 summary(mod_mnlogit0)
 summary(mod_mnlogit1)
 summary(mod_mnlogit1.1)
 summary(mod_mnlogit2)
+summary(mod_mnlogit3)
+summary(mod_mnlogit4)
 
 lapply(list(mod_mnlogit0, mod_mnlogit1, mod_mnlogit1.1, mod_mnlogit2), function(x) logLik(x))
 lapply(list(mod_mnlogit0, mod_mnlogit1, mod_mnlogit1.1, mod_mnlogit2), function(x) AIC(x))
 
 ### Fit random coeff - normal
+rand_coeff <- c('I(TT_INFO/60)'="n", "compliance_rate:O1D1_north"="n", "compliance_rate:O1D1_south"="n")
+rand_coeff <- c('I(TT_INFO/60)'="n", "compliance_rate:O2D1_north"="n", "compliance_rate:O2D1_south"="n")
+rand_coeff <- c('I(TT_INFO/60)'="n", "compliance_rate:O3D2_north"="n", "compliance_rate:O3D2_south"="n")
+
 mod_mnlogit1_rp <- mlogit(f1  , data=choices_mnl, rpar = c('I(TT_INFO/60)'="n"))
 mod_mnlogit1.1_rp <- mlogit(f1.1  , data=choices_mnl, rpar = c('I(TT_INFO/60)'="n"))
 mod_mnlogit2_rp <- mlogit(f2  , data=choices_mnl, rpar = c('I(TT_INFO/60)'="n"))
+mod_mnlogit3_rp <- mlogit(f3  , data=choices_mnl, rpar = rand_coeff)
+mod_mnlogit4_rp <- mlogit(f4  , data=choices_mnl, rpar = rand_coeff)
+
 
 summary(mod_mnlogit1_rp)
 summary(mod_mnlogit1.1_rp)
 summary(mod_mnlogit2_rp)
+summary(mod_mnlogit3_rp)
+summary(mod_mnlogit4_rp)
 
-lapply(list(mod_mnlogit1_rp, mod_mnlogit1.1_rp, mod_mnlogit2_rp), function(x) logLik(x))
-lapply(list(mod_mnlogit1_rp, mod_mnlogit1.1_rp, mod_mnlogit2_rp), function(x) AIC(x))
 
-### Fit probit
+lapply(list(mod_mnlogit1_rp, mod_mnlogit1.1_rp, mod_mnlogit2_rp,mod_mnlogit3_rp,mod_mnlogit4_rp), function(x) logLik(x))
+lapply(list(mod_mnlogit1_rp, mod_mnlogit1.1_rp, mod_mnlogit2_rp,mod_mnlogit3_rp,mod_mnlogit4_rp), function(x) AIC(x))
+
+ ### Fit probit
 mod_probit0 <- mlogit(f0  , data=choices_mnl, probit=TRUE)
 mod_probit1 <- mlogit(f1  , data=choices_mnl, probit=TRUE)
 mod_probit1.1 <- mlogit(f1.1  , data=choices_mnl, probit=TRUE)
 mod_probit2 <- mlogit(f2  , data=choices_mnl, probit=TRUE)
+mod_probit3 <- mlogit(f3  , data=choices_mnl, probit=TRUE)
+mod_probit4 <- mlogit(f4  , data=choices_mnl, probit=TRUE)
+
 
 summary(mod_probit0)
 summary(mod_probit1)
 summary(mod_probit1.1)
 summary(mod_probit2)
+summary(mod_probit3)
+summary(mod_probit4)
+
 
 lapply(list(mod_probit0, mod_probit1, mod_probit1.1, mod_probit2), function(x) logLik(x))
 lapply(list(mod_probit0, mod_probit1, mod_probit1.1, mod_probit2), function(x) AIC(x))

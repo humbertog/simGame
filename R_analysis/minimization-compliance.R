@@ -267,6 +267,9 @@ compliance_rate_player %>%
   ylab("count") +
   theme_bw() 
 
+compliance_rate_player %>%
+  write_csv("./R_data/compliance_player_exp20170412.csv")
+
 # ggsave("./plots/compliance_player.png",  width = 16, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
 
   
