@@ -12,8 +12,8 @@ library(tidyverse)
 library(mlogit)
 
 # Read the res_files
-source("r0_config_201704.R")
-#source("r0_config_201709.R")
+#source("r0_config_201704.R")
+source("r0_config_201709.R")
 source("R_readData/readTrips_player.R")
 #source("R_readData/readTrips_res.R")
 source("R_readData/readTTInfo.R")
@@ -39,9 +39,10 @@ alternative_attributes <- alternative_attributes %>%
 # STANDARDIZE VARIABLES
 infoTT <- 
   infoTT %>%
-    group_by(OD) %>%
-    mutate(TT_INFO_mean = mean(TT_INFO), TT_INFO_sd = sd(TT_INFO)) %>%
-    mutate(TT_INFO_std = TT_INFO  / TT_INFO_mean ) %>%
+  group_by(OD) %>%
+  mutate(TT_INFO_mean = mean(TT_INFO), TT_INFO_sd = sd(TT_INFO)) %>%
+  mutate(TT_INFO_std = TT_INFO  / TT_INFO_mean ) %>%
+  #mutate(TT_INFO_std = (TT_INFO - TT_INFO_mean)  / TT_INFO_sd) %>%
   group_by()
 
 # Creates the data base with the forgone choices
@@ -51,8 +52,8 @@ od_route <- unique(trips_play[,c("OD", "PATH_NAME")])
 
 choices <- 
   trips_play %>% 
-    select(CHOICE_ID, PLAYER_ID, DEMAND, TREATMENT, OD, PATH_NAME, DEP_TIME, ARR_TIME, TT) %>%
-    full_join(od_route, by="OD")
+  select(CHOICE_ID, PLAYER_ID, DEMAND, TREATMENT, OD, PATH_NAME, DEP_TIME, ARR_TIME, TT) %>%
+  full_join(od_route, by="OD")
 
 
 
@@ -78,8 +79,8 @@ choices <-
 # join the compliance
 choices <-
   choices %>%
-    left_join(compliance, by= "PLAYER_ID")
-  
+  left_join(compliance, by= "PLAYER_ID")
+
 
 
 # Obtains chosen route
@@ -89,7 +90,9 @@ choices <- choices %>%
   rename(PATH_NAME=PATH_NAME.y)
 
 
-
+choices <-
+  choices %>%
+  mutate(high_compliance = as.factor(ifelse(compliance_rate >= .5, 1, 0)))
 
 #####################################################################
 # MODELS
@@ -108,118 +111,182 @@ choices_mnl <- mlogit.data(data_model, choice="CHOSEN", shape="long", alt.var="P
 
 # Formulas
 f0 <- mFormula(CHOSEN ~ 1 )
-f1 <- mFormula(CHOSEN ~  -1+ I(TT_INFO/60) )  
-f1_std <- mFormula(CHOSEN ~  -1+ TT_INFO_std )  
-f1.1 <- mFormula(CHOSEN ~  1 + I(TT_INFO/60) )  
-f2 <- mFormula(CHOSEN ~ -1 + I(TT_INFO/60) + total_len + ncross_km) 
-f3 <- mFormula(CHOSEN ~  I(TT_INFO/60) | -1 + compliance_rate ) 
-f4 <- mFormula(CHOSEN ~  I(TT_INFO/60) + total_len + ncross_km | -1 + compliance_rate  ) 
-f5 <- mFormula(CHOSEN ~  -1 + I(TT_INFO/60 * compliance_rate)  ) 
-f5_std <- mFormula(CHOSEN ~  -1 + I(TT_INFO_std * compliance_rate)  ) 
-f5.1 <- mFormula(CHOSEN ~  -1 + I(TT_INFO/60 * compliance_rate) + total_len + ncross_km  ) 
-f5.1_std <- mFormula(CHOSEN ~  -1 + I(TT_INFO_std * compliance_rate) + total_len + ncross_km  ) 
+f1 <- mFormula(CHOSEN ~  -1+ TT_INFO_std )  
+f1.1 <- mFormula(CHOSEN ~  1 + TT_INFO_std )
+
+f2 <- mFormula(CHOSEN ~ -1 + TT_INFO_std + total_len + ncross_km) 
+f2.2 <- mFormula(CHOSEN ~ -1 + (TT_INFO_std + total_len + ncross_km):high_compliance ) 
+f2.3 <- mFormula(CHOSEN ~ -1 + TT_INFO_std + (total_len + ncross_km):high_compliance ) 
+
+f3 <- mFormula(CHOSEN ~  TT_INFO_std | -1 + compliance_rate ) 
+f4 <- mFormula(CHOSEN ~  TT_INFO_std + total_len + ncross_km | -1 + compliance_rate  ) 
+
+f5 <- mFormula(CHOSEN ~  -1 + TT_INFO_std:compliance_rate  ) 
+f5.1  <- mFormula(CHOSEN ~  1 + TT_INFO_std:compliance_rate  ) 
+f5.2 <- mFormula(CHOSEN ~  -1 + TT_INFO_std:compliance_rate + total_len + ncross_km  ) 
+f5.3 <- mFormula(CHOSEN ~  -1 + (TT_INFO_std:compliance_rate + total_len + ncross_km):high_compliance  ) 
+f5.4 <- mFormula(CHOSEN ~  -1 + TT_INFO_std:compliance_rate + (total_len + ncross_km):high_compliance  ) 
 
 
 # No need to standardize: it can be obtained from the original by multiplying by sd(explanatory) and 
 # dividing by 60
 
-
-
 ### Fit mnlogit
 mod_mnlogit0 <- mlogit(f0  , data=choices_mnl)
 mod_mnlogit1 <- mlogit(f1  , data=choices_mnl)
-mod_mnlogit1_std <- mlogit(f1_std  , data=choices_mnl)
 mod_mnlogit1.1 <- mlogit(f1.1  , data=choices_mnl)
+
 mod_mnlogit2 <- mlogit(f2  , data=choices_mnl)
+mod_mnlogit2.2 <- mlogit(f2.2  , data=choices_mnl)
+mod_mnlogit2.3 <- mlogit(f2.3  , data=choices_mnl)
+
 mod_mnlogit3 <- mlogit(f3  , data=choices_mnl)
 mod_mnlogit4 <- mlogit(f4  , data=choices_mnl)
+
 mod_mnlogit5 <- mlogit(f5  , data=choices_mnl)
-mod_mnlogit5_std <- mlogit(f5_std  , data=choices_mnl)
 mod_mnlogit5.1 <- mlogit(f5.1  , data=choices_mnl)
-mod_mnlogit5.1_std <- mlogit(f5.1_std  , data=choices_mnl)
+mod_mnlogit5.2 <- mlogit(f5.2  , data=choices_mnl)
+mod_mnlogit5.3 <- mlogit(f5.3  , data=choices_mnl)
+mod_mnlogit5.4 <- mlogit(f5.4  , data=choices_mnl)
 
 
 summary(mod_mnlogit0)
 summary(mod_mnlogit1)
-summary(mod_mnlogit1_std)
 summary(mod_mnlogit1.1)
+
 summary(mod_mnlogit2)
+summary(mod_mnlogit2.2)
+summary(mod_mnlogit2.3)
+
 summary(mod_mnlogit3)
 summary(mod_mnlogit4)
+
 summary(mod_mnlogit5)
-summary(mod_mnlogit5_std)
 summary(mod_mnlogit5.1)
-summary(mod_mnlogit5.1_std)
+summary(mod_mnlogit5.2)
+summary(mod_mnlogit5.3)
+summary(mod_mnlogit5.4)
 
 
 lapply(list(mod_mnlogit0, mod_mnlogit1, mod_mnlogit1.1, 
-            mod_mnlogit2, mod_mnlogit3, mod_mnlogit4, mod_mnlogit5, mod_mnlogit5.1), function(x) logLik(x))
+            mod_mnlogit2, mod_mnlogit2.2, mod_mnlogit2.3, 
+            mod_mnlogit3, mod_mnlogit4, 
+            mod_mnlogit5, mod_mnlogit5.1, mod_mnlogit5.2, mod_mnlogit5.3, mod_mnlogit5.4), 
+       function(x) logLik(x))
 lapply(list(mod_mnlogit0, mod_mnlogit1, mod_mnlogit1.1, 
-            mod_mnlogit2, mod_mnlogit3, mod_mnlogit4, mod_mnlogit5, mod_mnlogit5.1), function(x) AIC(x))
-
+            mod_mnlogit2, mod_mnlogit2.2, mod_mnlogit2.3, 
+            mod_mnlogit3, mod_mnlogit4, 
+            mod_mnlogit5, mod_mnlogit5.1, mod_mnlogit5.2, mod_mnlogit5.3, mod_mnlogit5.4), 
+       function(x) AIC(x))
 
 
 
 
 ### Fit random coeff - normal
-rand_coeff <- c('I(TT_INFO/60)'="n", "compliance_rate:O1D1_north"="n", "compliance_rate:O1D1_south"="n")
-rand_coeff <- c('I(TT_INFO/60)'="n", "compliance_rate:O2D1_north"="n", "compliance_rate:O2D1_south"="n")
-rand_coeff <- c('I(TT_INFO/60)'="n", "compliance_rate:O3D2_north"="n", "compliance_rate:O3D2_south"="n")
+rand_coeff <- c('TT_INFO_std'="n")
+rand_coeff_2 <-c('TT_INFO_std:high_compliance0' = 'n', 'TT_INFO_std:high_compliance1' = 'n')
+rand_coeff_3 <- c('TT_INFO_std:compliance_rate'='n')
+rand_coeff_4 <-c('high_compliance0:TT_INFO_std:compliance_rate'='n', 'high_compliance1:TT_INFO_std:compliance_rate'='n')
 
-mod_mnlogit1_rp <- mlogit(f1  , data=choices_mnl, rpar = c('I(TT_INFO/60)'="n"))
-mod_mnlogit1.1_rp <- mlogit(f1.1  , data=choices_mnl, rpar = c('I(TT_INFO/60)'="n"))
-mod_mnlogit2_rp <- mlogit(f2  , data=choices_mnl, rpar = c('I(TT_INFO/60)'="n"))
+#rand_coeff <- c('TT_INFO_std'="n", "compliance_rate:O2D1_north"="n", "compliance_rate:O2D1_south"="n")
+#rand_coeff <- c('TT_INFO_std'="n", "compliance_rate:O3D2_north"="n", "compliance_rate:O3D2_south"="n")
+
+mod_mnlogit1_rp <- mlogit(f1  , data=choices_mnl, rpar = rand_coeff)
+mod_mnlogit1.1_rp <- mlogit(f1.1  , data=choices_mnl, rpar = rand_coeff)
+
+mod_mnlogit2_rp <- mlogit(f2  , data=choices_mnl, rpar = rand_coeff)
+mod_mnlogit2.2_rp <- mlogit(f2.2  , data=choices_mnl, rpar = rand_coeff_2)
+mod_mnlogit2.3_rp <- mlogit(f2.3  , data=choices_mnl, rpar = rand_coeff)
+
 mod_mnlogit3_rp <- mlogit(f3  , data=choices_mnl, rpar = rand_coeff)
 mod_mnlogit4_rp <- mlogit(f4  , data=choices_mnl, rpar = rand_coeff)
-mod_mnlogit5_rp <- mlogit(f5  , data=choices_mnl, rpar = c('I(TT_INFO/60 * compliance_rate)'="n"))
-mod_mnlogit5.1_rp <- mlogit(f5.1  , data=choices_mnl, rpar = c('I(TT_INFO/60 * compliance_rate)'="n"))
+
+mod_mnlogit5_rp <- mlogit(f5  , data=choices_mnl, rpar = rand_coeff_3)
+mod_mnlogit5.1_rp <- mlogit(f5.1  , data=choices_mnl, rpar = rand_coeff_3)
+mod_mnlogit5.2_rp <- mlogit(f5.2  , data=choices_mnl, rpar = rand_coeff_3)
+mod_mnlogit5.3_rp <- mlogit(f5.3  , data=choices_mnl, rpar = rand_coeff_4)
+mod_mnlogit5.4_rp <- mlogit(f5.4  , data=choices_mnl, rpar = rand_coeff_3)
+
 
 summary(mod_mnlogit1_rp)
 summary(mod_mnlogit1.1_rp)
+
 summary(mod_mnlogit2_rp)
+summary(mod_mnlogit2.2_rp)
+summary(mod_mnlogit2.3_rp)
+
 summary(mod_mnlogit3_rp)
 summary(mod_mnlogit4_rp)
+
 summary(mod_mnlogit5_rp)
 summary(mod_mnlogit5.1_rp)
+summary(mod_mnlogit5.2_rp)
+summary(mod_mnlogit5.3_rp)
+summary(mod_mnlogit5.4_rp)
 
 
-lapply(list(mod_mnlogit1_rp, mod_mnlogit1.1_rp, mod_mnlogit2_rp,mod_mnlogit3_rp,mod_mnlogit4_rp,
-            mod_mnlogit5_rp, mod_mnlogit5.1_rp
-            ), function(x) logLik(x))
-lapply(list(mod_mnlogit1_rp, mod_mnlogit1.1_rp, mod_mnlogit2_rp,mod_mnlogit3_rp,mod_mnlogit4_rp,
-            mod_mnlogit5_rp, mod_mnlogit5.1_rp
-            ), function(x) AIC(x))
+lapply(list(mod_mnlogit1_rp, mod_mnlogit1.1_rp, 
+            mod_mnlogit2_rp,mod_mnlogit2.2_rp, mod_mnlogit2.3_rp,
+            mod_mnlogit3_rp,mod_mnlogit4_rp,
+            mod_mnlogit5_rp, mod_mnlogit5.1_rp, mod_mnlogit5.2_rp,mod_mnlogit5.3_rp,mod_mnlogit5.4_rp
+), function(x) logLik(x))
 
- ### Fit probit
+lapply(list(mod_mnlogit1_rp, mod_mnlogit1.1_rp, 
+            mod_mnlogit2_rp,mod_mnlogit2.2_rp, mod_mnlogit2.3_rp,
+            mod_mnlogit3_rp,mod_mnlogit4_rp,
+            mod_mnlogit5_rp, mod_mnlogit5.1_rp, mod_mnlogit5.2_rp,mod_mnlogit5.3_rp,mod_mnlogit5.4_rp
+), function(x) AIC(x))
+
+
+### Fit probit
 mod_probit0 <- mlogit(f0  , data=choices_mnl, probit=TRUE)
+
 mod_probit1 <- mlogit(f1  , data=choices_mnl, probit=TRUE)
-mod_probit1_std <- mlogit(f1_std  , data=choices_mnl, probit=TRUE)
 mod_probit1.1 <- mlogit(f1.1  , data=choices_mnl, probit=TRUE)
+
 mod_probit2 <- mlogit(f2  , data=choices_mnl, probit=TRUE)
+mod_probit2.2 <- mlogit(f2.2  , data=choices_mnl, probit=TRUE)
+mod_probit2.3 <- mlogit(f2.3  , data=choices_mnl, probit=TRUE)
+
 mod_probit3 <- mlogit(f3  , data=choices_mnl, probit=TRUE)
 mod_probit4 <- mlogit(f4  , data=choices_mnl, probit=TRUE)
+
 mod_probit5 <- mlogit(f5  , data=choices_mnl, probit=TRUE)
-mod_probit5_std <- mlogit(f5_std  , data=choices_mnl, probit=TRUE)
 mod_probit5.1 <- mlogit(f5.1  , data=choices_mnl, probit=TRUE)
+mod_probit5.2 <- mlogit(f5.2  , data=choices_mnl, probit=TRUE)
+mod_probit5.3 <- mlogit(f5.3  , data=choices_mnl, probit=TRUE)
+mod_probit5.4 <- mlogit(f5.4  , data=choices_mnl, probit=TRUE)
 
 
 summary(mod_probit0)
+
 summary(mod_probit1)
-summary(mod_probit1_std)
 summary(mod_probit1.1)
+
 summary(mod_probit2)
+summary(mod_probit2.2)
+summary(mod_probit2.3)
+
 summary(mod_probit3)
 summary(mod_probit4)
-summary(mod_probit5)
-summary(mod_probit5_std)
-summary(mod_probit5.1)
 
-lapply(list(mod_probit0, mod_probit1, mod_probit1.1, mod_probit2, mod_probit3, mod_probit4,
-            mod_probit5, mod_probit5.1
-            ), function(x) logLik(x))
-lapply(list(mod_probit0, mod_probit1, mod_probit1.1, mod_probit2, mod_probit3, mod_probit4,
-            mod_probit5,mod_probit5.1
-            ), function(x) AIC(x))
+summary(mod_probit5)
+summary(mod_probit5.1)
+summary(mod_probit5.2)
+summary(mod_probit5.3)
+summary(mod_probit5.4)
+
+
+lapply(list(mod_probit0, mod_probit1, mod_probit1.1, 
+            mod_probit2, mod_probit2.2, mod_probit2.3,
+            mod_probit3, mod_probit4,
+            mod_probit5, mod_probit5.1, mod_probit5.2, mod_probit5.3, mod_probit5.4
+), function(x) logLik(x))
+lapply(list(mod_probit0, mod_probit1, mod_probit1.1, 
+            mod_probit2, mod_probit2.2, mod_probit2.3,
+            mod_probit3, mod_probit4,
+            mod_probit5, mod_probit5.1, mod_probit5.2, mod_probit5.3, mod_probit5.4
+), function(x) AIC(x))
 
 
 
@@ -241,10 +308,10 @@ ggplot() +
   scale_color_manual(values=c("observed"="red", "mnlogit"="blue","rand_coeff"="green", "probit"="black", 
                               "rand_coeff_compliance"="yellow", "mnlogit_compliance"="brown",
                               "probit_compliance"="red"
-                              )) +
+  )) +
   ylab("relative frequency") +
   theme_bw()
-  
+
 ggsave(paste(od, "_pred.png", sep=""),  width = 16, height = 12, units = "cm",
        dpi = 300, limitsize = TRUE)
 

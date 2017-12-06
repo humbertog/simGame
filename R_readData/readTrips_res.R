@@ -57,9 +57,9 @@ trips_res <-
 
 ###### Route names 
 # Obtains the names of the routes
-trips_res$PATH_NAME <- getPathNames(trips_res$PATH, orig_route_l2)
+trips_res$PATH_NAME <- getPathNamesOD(trips_res$PATH, trips_res$ORIGIN, orig_route_l2, simmilarity=.5)
 trips_res$PATH_NAME_INI <- getIniPathName(trips_res$PATH_NAME)
-if (sum(is.na(trips_res$PATH_NAME)) > 0) warning(paste("PATH_NAME could not be computed for all trips"))
+if (sum(trips_res$PATH_NAME == "other") > 0) warning(paste("PATH_NAME could not be computed for all trips"))
 
 trips_res <- 
   trips_res %>% 

@@ -37,14 +37,23 @@ trips_play <-
             by=c("DEMAND"="DEMAND", "PATH_NAME"="ROUTE", "PERIOD"="PERIOD")) %>%
   left_join(alternative_attributes, by=c("PATH_NAME"="PATH_NAME"))
 
+
+# rename treatments
+trips_play <- 
+  trips_play %>%
+  mutate(TREAT = ifelse(TREATMENT == "t1", ".NI: no info", ifelse(TREATMENT == "t2", "CMI: map info", "TTI: travel time info")))
+
+
 ##############################################
 # Analysis
 ##############################################
 
+
+
 ##### The choice distribution
 choice_frequency <- 
   trips_play %>%
-  group_by(TREATMENT, OD,PATH_NAME) %>%
+  group_by(TREATMENT, TREAT, OD,PATH_NAME) %>%
   summarise(n=n()) 
 
 choice_frequency <-   
@@ -56,14 +65,40 @@ choice_frequency <-
 choice_frequency %>%
   ggplot() +
   geom_col(aes(PATH_NAME, freq, fill=OD)) +
-  facet_grid(.~TREATMENT) +
+  facet_grid(.~TREAT) +
   theme_bw() +
   xlab("route") +
   labs(x="route name", y="count", fill = "OD", colour="OD") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
 
-ggsave("choiceDist.png",  width = 20, height = 10, units = "cm",
-       dpi = 300, limitsize = TRUE)
+ggsave("./plots/choiceDist.png",  width = 27, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
+
+trips_play %>%
+  count(TREATMENT, PATH_NAME) %>%
+  spread(key = PATH_NAME,n) %>%
+  filter(TREATMENT %in% c("t1", "t2")) %>%
+  group_by() %>%
+  select(-TREATMENT) %>%
+  chisq.test(simulate.p.value = TRUE)
+  
+
+trips_play %>%
+  count(TREATMENT, PATH_NAME) %>%
+  spread(key = PATH_NAME,n) %>%
+  filter(TREATMENT %in% c("t1", "t3")) %>%
+  group_by() %>%
+  select(-TREATMENT) %>%
+  chisq.test(simulate.p.value = TRUE)
+
+
+
+trips_play %>%
+  count(TREATMENT, PATH_NAME) %>%
+  spread(key = PATH_NAME,n) %>%
+  filter(TREATMENT %in% c("t2", "t3")) %>%
+  group_by() %>%
+  select(-TREATMENT) %>%
+  chisq.test(simulate.p.value = TRUE)
 
 
 ##### Time choice dist
@@ -72,6 +107,8 @@ trips_play %>%
   geom_histogram(aes(DEP_TIME_F, fill=TREATMENT), binwidth=300,center=hms(25350)) +
   theme_bw() +
   xlab("departure time")
+
+
 ggsave("timeChoiceDist.png",  width = 20, height = 10, units = "cm",
        dpi = 300, limitsize = TRUE)
 

@@ -87,7 +87,7 @@ trips_play <-
 
 ###### Route names 
 # Obtains the names of the routes
-trips_play$PATH_NAME <- getPathNames(trips_play$PATH, orig_route_l2, simmilarity=.6)
+trips_play$PATH_NAME <- getPathNames(trips_play$PATH , orig_route_l2, simmilarity=.6)
 trips_play$PATH_NAME_INI <- getIniPathName(trips_play$PATH_NAME)
 if (sum(is.na(trips_play$PATH_NAME)) > 0) warning(paste("PATH_NAME could not be computed for all trips"))
 
