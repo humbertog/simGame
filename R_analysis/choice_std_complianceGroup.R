@@ -4,8 +4,8 @@
 # - the INFORMED TRAVEL TIME in each of the alternatives
 # - the standard deviation of the travel time
 # - the treatment to which the player belongs
-# The mean tt and the sdcorrespond to those of the travel time distributions
-# constructed around the departure time of the chosen alternative.
+# Analysis of the compliance imact in the regression coefficients
+# Using groups of participants by CR
 #####################################################################
 
 library(tidyverse)
@@ -94,6 +94,21 @@ choices <-
   choices %>%
   mutate(high_compliance = as.factor(ifelse(compliance_rate >= .5, 1, 0)))
 
+##############################
+# We make groups of compliance by quartiles
+quantile(compliance$compliance_rate, probs = c(0,1/3, 2/3, 1))
+
+choices$cr_group <- "q1"
+choices$cr_group[choices$compliance_rate > 0.5000000] <- "q2"
+choices$cr_group[choices$compliance_rate > 0.6666667] <- "q3"
+table(choices$cr_group[choices$TREATMENT == "t3"], choices$OD[choices$TREATMENT == "t3"])
+
+
+choices$cr_group <- "q1"
+choices$cr_group[choices$compliance_rate > 0.5000000] <- "q2"
+
+
+
 #####################################################################
 # MODELS
 #####################################################################
@@ -104,82 +119,58 @@ data_model <-
   choices %>%
   filter(OD==od) %>%
   filter(TREATMENT==treat) %>%
-  #filter(compliance_rate>.5) %>%
+  filter(compliance_rate>.5) %>%
   as.data.frame()
 
 choices_mnl <- mlogit.data(data_model, choice="CHOSEN", shape="long", alt.var="PATH_NAME", chid.var = "CHOICE_ID", drop.index=TRUE)
 
 # Formulas
-f0 <- mFormula(CHOSEN ~ 1 )
 f1 <- mFormula(CHOSEN ~  -1+ TT_INFO_std )  
-f1.1 <- mFormula(CHOSEN ~  1 + TT_INFO_std )
-f1.2 <- mFormula(CHOSEN ~  -1 + TT_INFO_std + TT_INFO_std:high_compliance )
+f1.1 <- mFormula(CHOSEN ~  1  + TT_INFO_std:cr_group )
+f1.2 <- mFormula(CHOSEN ~  -1  + TT_INFO_std:cr_group )
+
 
 f2 <- mFormula(CHOSEN ~ -1 + TT_INFO_std + total_len + ncross_km) 
-f2.2 <- mFormula(CHOSEN ~ -1 + (TT_INFO_std + total_len + ncross_km):high_compliance ) 
-f2.3 <- mFormula(CHOSEN ~ -1 + TT_INFO_std + (total_len + ncross_km):high_compliance ) 
-
-f3 <- mFormula(CHOSEN ~  TT_INFO_std | -1 + compliance_rate ) 
-f4 <- mFormula(CHOSEN ~  TT_INFO_std + total_len + ncross_km | -1 + compliance_rate  ) 
+f2.2 <- mFormula(CHOSEN ~ -1 + (TT_INFO_std + total_len + ncross_km):cr_group ) 
 
 f5 <- mFormula(CHOSEN ~  -1 + TT_INFO_std:compliance_rate  ) 
-f5.1  <- mFormula(CHOSEN ~  1 + TT_INFO_std:compliance_rate  ) 
 f5.2 <- mFormula(CHOSEN ~  -1 + TT_INFO_std:compliance_rate + total_len + ncross_km  ) 
-f5.3 <- mFormula(CHOSEN ~  -1 + (TT_INFO_std:compliance_rate + total_len + ncross_km):high_compliance  ) 
-f5.4 <- mFormula(CHOSEN ~  -1 + TT_INFO_std:compliance_rate + (total_len + ncross_km):high_compliance  ) 
 
-
-# No need to standardize: it can be obtained from the original by multiplying by sd(explanatory) and 
-# dividing by 60
 
 ### Fit mnlogit
-mod_mnlogit0 <- mlogit(f0  , data=choices_mnl)
 mod_mnlogit1 <- mlogit(f1  , data=choices_mnl)
 mod_mnlogit1.1 <- mlogit(f1.1  , data=choices_mnl)
 mod_mnlogit1.2 <- mlogit(f1.2  , data=choices_mnl)
 
+
 mod_mnlogit2 <- mlogit(f2  , data=choices_mnl)
 mod_mnlogit2.2 <- mlogit(f2.2  , data=choices_mnl)
-mod_mnlogit2.3 <- mlogit(f2.3  , data=choices_mnl)
-
-mod_mnlogit3 <- mlogit(f3  , data=choices_mnl)
-mod_mnlogit4 <- mlogit(f4  , data=choices_mnl)
 
 mod_mnlogit5 <- mlogit(f5  , data=choices_mnl)
-mod_mnlogit5.1 <- mlogit(f5.1  , data=choices_mnl)
 mod_mnlogit5.2 <- mlogit(f5.2  , data=choices_mnl)
 mod_mnlogit5.3 <- mlogit(f5.3  , data=choices_mnl)
-mod_mnlogit5.4 <- mlogit(f5.4  , data=choices_mnl)
 
 
-summary(mod_mnlogit0)
 summary(mod_mnlogit1)
 summary(mod_mnlogit1.1)
 summary(mod_mnlogit1.2)
+summary(mlogit(CHOSEN ~  -1  + TT_INFO_std ,data=choices_mnl))
+
 
 summary(mod_mnlogit2)
 summary(mod_mnlogit2.2)
-summary(mod_mnlogit2.3)
-
-summary(mod_mnlogit3)
-summary(mod_mnlogit4)
 
 summary(mod_mnlogit5)
-summary(mod_mnlogit5.1)
 summary(mod_mnlogit5.2)
-summary(mod_mnlogit5.3)
-summary(mod_mnlogit5.4)
 
 
-lapply(list(mod_mnlogit0, mod_mnlogit1, mod_mnlogit1.1, 
-            mod_mnlogit2, mod_mnlogit2.2, mod_mnlogit2.3, 
-            mod_mnlogit3, mod_mnlogit4, 
-            mod_mnlogit5, mod_mnlogit5.1, mod_mnlogit5.2, mod_mnlogit5.3, mod_mnlogit5.4), 
+lapply(list(mod_mnlogit1, mod_mnlogit1.2, 
+            mod_mnlogit2, mod_mnlogit2.2,
+            mod_mnlogit5, mod_mnlogit5.2), 
        function(x) logLik(x))
-lapply(list(mod_mnlogit0, mod_mnlogit1, mod_mnlogit1.1, 
-            mod_mnlogit2, mod_mnlogit2.2, mod_mnlogit2.3, 
-            mod_mnlogit3, mod_mnlogit4, 
-            mod_mnlogit5, mod_mnlogit5.1, mod_mnlogit5.2, mod_mnlogit5.3, mod_mnlogit5.4), 
+lapply(list(mod_mnlogit1, mod_mnlogit1.2, 
+            mod_mnlogit2, mod_mnlogit2.2,
+            mod_mnlogit5, mod_mnlogit5.2),  
        function(x) AIC(x))
 
 

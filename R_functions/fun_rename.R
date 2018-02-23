@@ -17,6 +17,27 @@ renameRoutes <- function(routes) {
   unlist(lapply(routes, renameRoute))
 }
 
+renameRoutes_short <- function(routes) {
+  renameRoute <- function(x) {
+    r <- "no_name"
+    if(x == "O1D1_center") r <- "O1D1_c"
+    if(x == "O1D1_north") r <- "O1D1_n"
+    if(x == "O1D1_south") r <- "O1D1_s"
+    if(x == "O3D2_north") r <- "O3D2_n"
+    if(x == "O3D2_center") r <- "O3D2_c"
+    if(x == "O3D2_south") r <- "O3D2_s"
+    if(x == "O2D1_south") r <- "O2D1_s"
+    if(x == "O2D1_north") r <- "O2D1_n"
+    if(x == "O2D1_center") r <- "O2D1_c"
+    r
+  }
+  unlist(lapply(routes, renameRoute))
+}
+
+
+
+
+
 renameOD <- function(ods) {
   renameOD <- function(x) {
     r <- "no_name"

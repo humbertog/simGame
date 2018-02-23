@@ -273,19 +273,17 @@ ggplot() +
   geom_col(aes(PATH_NAME, freq, colour="probit5.2"), alpha=0 ,data=data.frame(PATH_NAME=names(pred_probit5.2),freq=pred_probit5.2)) +
   geom_col(aes(PATH_NAME, freq, colour="probit5.3"), alpha=0 ,data=data.frame(PATH_NAME=names(pred_probit5.3),freq=pred_probit5.3)) +
   theme_bw()
-#ggsave(paste(od, "_pred.png", sep=""),  width = 16, height = 12, units = "cm",
-#       dpi = 300, limitsize = TRUE)
+ggsave(paste(od, "_pred.png", sep=""),  width = 16, height = 12, units = "cm", dpi = 300, limitsize = TRUE)
 
 
 ggplot() +
   geom_col(aes(PATH_NAME, freq, fill="observed"), alpha=.25, data=observed) +
-  geom_col(aes(PATH_NAME, freq, colour="mnlogit5.2"), alpha=0 ,data=data.frame(PATH_NAME=names(pred_mnlogit5.2),freq=pred_mnlogit5.2)) +
-  geom_col(aes(PATH_NAME, freq, colour="mnlogit5.2_rp"), alpha=0 ,data=data.frame(PATH_NAME=names(pred_mnlogit5.2_rp),freq=pred_mnlogit5.2_rp)) +
-  geom_col(aes(PATH_NAME, freq, colour="probit5.2"), alpha=0 ,data=data.frame(PATH_NAME=names(pred_probit5.2),freq=pred_probit5.2)) +
+  geom_col(aes(PATH_NAME, freq, colour="mnlogit"), alpha=0 ,data=data.frame(PATH_NAME=names(pred_mnlogit5.2),freq=pred_mnlogit5.2)) +
+  geom_col(aes(PATH_NAME, freq, colour="mnlogit_rcoeff"), alpha=0 ,data=data.frame(PATH_NAME=names(pred_mnlogit5.2_rp),freq=pred_mnlogit5.2_rp)) +
+  geom_col(aes(PATH_NAME, freq, colour="probit"), alpha=0 ,data=data.frame(PATH_NAME=names(pred_probit5.2),freq=pred_probit5.2)) +
   theme_bw()
 
-#ggsave(paste(od, "_pred5.2.png", sep=""),  width = 16, height = 12, units = "cm",
-#       dpi = 300, limitsize = TRUE)
+ggsave(paste(od, "_pred5.2.png", sep=""),  width = 16, height = 12, units = "cm",dpi = 300, limitsize = TRUE)
 
 ggplot() +
   geom_col(aes(PATH_NAME, freq, fill="observed"), alpha=.25, data=observed) +

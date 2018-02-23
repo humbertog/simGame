@@ -8,7 +8,7 @@
 #####################################################################
 library(tidyverse)
 
-source("r0_config_201709.R")
+source("r0_config_201704.R")
 source("R_readData/readTrips_player.R")
 source("R_readData/readTrips_res.R")
 source("R_readData/readTTInfo.R")
@@ -95,6 +95,12 @@ choices <- choices %>%
 choices$PATH_NAME_SHORT <- unlist(lapply(strsplit(choices$PATH_NAME, "_"), function(x) x[2]))
 
 
+# Dont take into account the las hour (thi is only for exp20170925 because there was a bug in 
+# the game)
+#choices <- 
+#  choices %>%
+#  filter(DEP_TIME <= 32400)
+  
 
 ####################################################################################
 # Compliance rate
@@ -102,6 +108,7 @@ choices$PATH_NAME_SHORT <- unlist(lapply(strsplit(choices$PATH_NAME, "_"), funct
 #### 
 choices %>% 
   filter(TREATMENT == "t3") %>% 
+#  filter(TREATMENT == "t1") %>% 
   select(OD) %>%
   table() / 3
 
@@ -151,15 +158,17 @@ joint_chosen_fastest %>%
   summarise(compliance_od = sum(prob_joint))
 
 # % fastest informed plots 
+
 joint_chosen_fastest %>%
-  distinct(OD, fastest_informed_path, prob_fastest) %>%
   group_by() %>%
+  distinct(OD, fastest_informed_path, prob_fastest) %>%
   add_row(OD=c("O1D1", "O1D1", "O3D2", "O3D2", "O2D1", "O2D1", "O2D1"), 
           fastest_informed_path=c("O1D1_center","O1D1_south", 
                                   "O3D2_center", "O3D2_south",
                                   "O2D1_center", "O2D1_south", "O2D1_north"),
           prob_fastest = c(0,0,0,0,0,0,0)
           ) %>%
+  mutate(fastest_informed_path = renameRoutes_short(fastest_informed_path)) %>%
   ggplot() +
   geom_col(aes(fastest_informed_path, prob_fastest, fill=OD)) +
   xlab("route name") +
@@ -167,10 +176,10 @@ joint_chosen_fastest %>%
 #  ggtitle("% informed as fastest") +
   theme_bw() +
   ylim(0,1) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position='none') 
 
 
-ggsave("./plots/perc_fastest_route.png",  width = 12, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
+#ggsave("./plots/perc_fastest_route.png",  width = 12, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
 
 # % chosen
 joint_chosen_fastest %>%
@@ -202,13 +211,19 @@ compliance_route %>%
                         "O3D2_center", "O3D2_south",
                         "O2D1_center", "O2D1_south", "O2D1_north"),
           compliance_route = c(0,0,0,0,0,0,0)
-  )
+  ) %>%
+  mutate(chosen_path = renameRoutes_short(chosen_path)) 
 
 compliance_route_temp2 <- 
   compliance_route_temp %>%
-  #filter(chosen_path%in%c("O1D1_south", "O3D2_center", "O3D2_south")) %>% # SG201704
-  filter(chosen_path%in%c("O1D1_center", "O2D1_center", "O2D1_north","O2D1_south" , "O3D2_center")) %>%# SG201704
-  mutate(compliance_route =1)
+  filter(chosen_path%in%c("O1D1_south", "O3D2_center", "O3D2_south")) %>% # SG201704
+  #filter(chosen_path%in%c("O1D1_center", "O2D1_center", "O2D1_north","O2D1_south" , "O3D2_center")) %>%# SG201704
+  #filter(chosen_path%in%c("O1D1_center", "O1D1_south", "O2D1_center", "O2D1_north","O2D1_south" , "O3D2_center")) %>%# SG201704
+  mutate(compliance_route =1) %>%
+  mutate(chosen_path = renameRoutes_short(chosen_path)) 
+
+
+
 
 ggplot() +
   geom_col(data=compliance_route_temp,aes(chosen_path, compliance_route, fill=OD)) +
@@ -217,9 +232,9 @@ ggplot() +
   ylab("compliance") +
   #ggtitle("Compliance by route") +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position='none') 
 
-ggsave("./plots/compliance_route.png",  width = 12, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
+#ggsave("./plots/compliance_route.png",  width = 12, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
   
 
 ####################################################################################
@@ -251,12 +266,13 @@ fastest_rest %>%
   facet_grid(diff_type ~.) +
   xlab("difference in informed travel time (seconds)") +
   ylab("density") +
-  ylim(0,0.0085) +
+  ylim(0,0.012) +
   xlim(0,700) +
   #ggtitle("Compliance by route") +
-  theme_bw() 
+  theme_bw() +
+  theme(legend.position='none') 
 
-ggsave("./plots/informed_tt_diff.png",  width = 16, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
+#ggsave("./plots/informed_tt_diff.png",  width = 16, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
 
 fastest_rest %>%
   group_by(OD, order_info_tt.y) %>%
@@ -266,7 +282,7 @@ fastest_rest %>%
 # See compliance by player
 ####################################################################################
 
-# We count the proportion of the decisions that players were complaint
+# We count the proportion of the decisions that players were complaint with
 compliance_rate_player <- 
   choices %>% 
   filter(TREATMENT == 't3', CHOSEN == TRUE) %>%
@@ -283,7 +299,7 @@ compliance_rate_player %>%
   xlim(0,1) +
   theme_bw() 
 
-ggsave("./plots/compliance_player.png",  width = 16, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
+#ggsave("./plots/compliance_player.png",  width = 12, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
 #compliance_rate_player %>%
 #  write_csv("./R_data/compliance_player_exp20170925.csv")
   
@@ -299,6 +315,89 @@ choices %>%
   summarise(Unique_Elements = n_distinct(OD)) %>%
   group_by(Unique_Elements) %>%
   summarise(n=n())
+
+
+
+####################################################################################
+# Compliance vs ITT difference
+####################################################################################
+
+# Normalize the variables
+normalization_infoTT <- 
+  infoTT %>%
+  group_by(OD, ROUTE) %>%
+  summarise(mean_itt = mean(TT_INFO), sd_itt = sd(TT_INFO)) %>%
+  rename(PATH_NAME=ROUTE)
+
+###
+choices_t3 <- 
+  choices %>%
+  filter(TREATMENT == "t3") %>%
+  select(CHOICE_ID, OD, PATH_NAME, TT_INFO, CHOSEN, order_info_tt)
+
+choices_t3_comply <- 
+  choices_t3 %>%
+  filter(CHOSEN == TRUE) %>%
+  mutate(comply = ifelse(CHOSEN == 1 & order_info_tt == 1, 1, 0)) %>%
+  select(CHOICE_ID, comply)
+
+choices_t3_diff <-
+  choices_t3 %>%
+  filter(order_info_tt == 1) %>%
+  left_join(choices_t3[choices_t3$order_info_tt == 2,],
+            by=c("CHOICE_ID", "OD")
+            ) %>%
+  select(CHOICE_ID,OD, PATH_NAME.x,TT_INFO.x, PATH_NAME.y, TT_INFO.y)
+
+choices_t3_diff <- 
+  choices_t3_diff %>%
+  left_join(normalization_infoTT, by=c("PATH_NAME.x"="PATH_NAME")) %>%
+  left_join(normalization_infoTT, by=c("PATH_NAME.y"="PATH_NAME")) %>%
+  left_join(choices_t3_comply)
+
+choices_t3_diff <- 
+  choices_t3_diff %>%
+#  mutate(itt_diff = ( TT_INFO.y  - TT_INFO.x  )    ) 
+  mutate(itt_diff = ( TT_INFO.y  - TT_INFO.x  ) / TT_INFO.x     ) 
+#  mutate(itt_diff = ( (TT_INFO.y - mean_itt.y) / sd_itt.y - (TT_INFO.x - mean_itt.x) / sd_itt.x   )    ) 
+#  mutate(itt_diff = TT_INFO.y / mean_itt.y - TT_INFO.x / mean_itt.x)
+
+
+# library(multcomp)
+#mod_comply <- glm(comply ~ itt_diff, family = binomial(link = "logit"), 
+#                  choices_t3_diff[choices_t3_diff$OD.x == "O3D2",])
+#summary(mod_comply)
+
+mod_complyfull <- glm(comply ~ itt_diff, family = binomial(link = "logit"), choices_t3_diff)
+summary(mod_complyfull)
+
+
+mod_complygroup <- glm(comply ~ itt_diff*OD.x, family = binomial(link = "logit"), choices_t3_diff)
+summary(mod_complygroup)
+
+
+mod_complygroup <- glm(comply ~ OD.x + itt_diff:OD.x, family = binomial(link = "logit"), choices_t3_diff)
+summary(mod_complygroup)
+
+glht.mod <- glht(mod_complygroup, linfct = c("OD.xO1D1:itt_diff -  OD.xO2D1:itt_diff= 0",
+                                             "OD.xO1D1:itt_diff - OD.xO3D2:itt_diff =0",
+                                             "OD.xO1D1:itt_diff = 0"
+                                             ))
+
+summary(glht.mod)   
+
+
+
+# plots
+logodds <- predict(mod_complyfull, type = "response")
+
+dataplot <- data.frame(x=seq(0,1,.01))
+dataplot$y <- exp(-0.2512 + 5.5304 * dataplot$x ) / (1 + exp(-0.2512 + 5.5304 *dataplot$x ))
+
+choices_t3_diff %>%
+  ggplot() +
+  geom_point(aes(itt_diff, comply)) +
+  geom_line(aes(x, y), data =  dataplot)
 
 
 ############################
@@ -319,7 +418,7 @@ choices %>%
   theme_bw() 
 
 
-ggsave("./plots/informed-incurred_TT.png",  width = 27, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
+#ggsave("./plots/informed-incurred_TT.png",  width = 27, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
 
 # RMSE
 choices %>%
@@ -359,7 +458,7 @@ accuracy_route %>%
 #  ggtitle("Information error vs complaince") +
   theme_bw() 
 
-ggsave("./plots/IE-compliance.png",  width = 16, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
+#ggsave("./plots/IE-compliance.png",  width = 16, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
 
 
 ### Now we see the order
@@ -386,35 +485,6 @@ choices %>%
   group_by(OD) %>%
   mutate(n_tot=sum(n), n/n_tot)
 
-choices %>%
-  group_by(OD, order_info_tt, order_tt) %>%
-  summarise(n=n_distinct(CHOICE_ID)) %>%
-  filter(order_info_tt==1) %>%
-  group_by(OD) %>%
-  mutate(n_tot=sum(n), n/n_tot)
 
 
-
-####################################################################################
-# Minimization rate
-####################################################################################
-minimization_rate <- 
-  choices %>% 
-  filter(TREATMENT == 't3') %>%
-  group_by(OD, PATH_NAME, order_tt) %>%
-  summarise(n=n(), minimization_n=sum(CHOSEN)) %>%
-  mutate(minimization_rate=minimization_n/n)
-
-minimization_rate_od <- 
-  minimization_rate %>%
-  group_by(OD,order_tt) %>%
-  summarise(n_od=sum(n), minimization_n_od=sum(minimization_n)) %>%
-  mutate(minimization_rate_od = minimization_n_od / n_od)
-
-minimization_rate_od %>%
-  ggplot() +
-  geom_col(aes(as.factor(order_tt), minimization_rate_od, fill=OD), position="dodge") +
-  xlab("route rank (1=fastest, 2=second fastest, 3=slow)") +
-  ylab("minimization rate") +
-  theme_bw() 
 

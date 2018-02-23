@@ -8,12 +8,12 @@ source("R_functions/fun_rename.R")
 
 # Reads the alternative attributes
 alternative_attributes <- read_csv("R_data/alternative_attributes.csv")
-alternative_attributes$PATH_NAME <- renameRoutes(alternative_attributes$PATH_NAME)
 
 # Drop some of the columns to avoid confussion
 trips_play$PATH_NAME <- trips_play$PATH_NAME_INI
 trips_play <- trips_play %>% 
-  select(-DEP_TIME_F_INI, -ARR_TIME_F_INI, -DEP_TIME_INI, -ARR_TIME_INI, -PATH_NAME_INI, -PLAYER_ID, -PATH_REROUTE)
+  select(-DEP_TIME_F_INI, -ARR_TIME_F_INI, -DEP_TIME_INI, -ARR_TIME_INI, -PATH_NAME_INI, -PATH_REROUTE)
+
 
 alternative_attributes <- alternative_attributes %>%
   select(-ncross)
@@ -47,32 +47,40 @@ trips_play <-
 ##############################################
 # Analysis
 ##############################################
-
-
-
 ##### The choice distribution
 choice_frequency <- 
   trips_play %>%
-  group_by(TREATMENT, TREAT, OD,PATH_NAME) %>%
+  group_by(TREAT, OD,PATH_NAME) %>%
   summarise(n=n()) 
 
 choice_frequency <-   
   choice_frequency %>%
-  group_by(TREATMENT, OD) %>%
+  group_by(TREAT, OD) %>%
   mutate(n_od=sum(n)) %>%
   mutate(freq=n / n_od)
 
 choice_frequency %>%
+  select(TREAT,    OD,   PATH_NAME, freq) %>%
+  group_by() %>%
+  add_row(TREAT= rep("CMI: map info", 9), 
+          OD=c(rep("O1D1",3), rep("O2D1",3), rep("O3D2",3)),
+          PATH_NAME = c("O1D1_center", "O1D1_north", "O1D1_south",
+                        "O2D1_center", "O2D1_north", "O2D1_south",
+                        "O3D2_center", "O3D2_north", "O3D2_south"
+                        ),
+          freq = rep(0,9)
+          ) %>%
+  mutate(PATH_NAME = renameRoutes_short(PATH_NAME)) %>%
   ggplot() +
   geom_col(aes(PATH_NAME, freq, fill=OD)) +
   facet_grid(.~TREAT) +
   theme_bw() +
-  xlab("route") +
-  labs(x="route name", y="count", fill = "OD", colour="OD") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+  labs(x="route", y="frequency", fill = "OD", colour="OD") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position='left') 
 
 ggsave("./plots/choiceDist.png",  width = 27, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
 
+#################################################
 trips_play %>%
   count(TREATMENT, PATH_NAME) %>%
   spread(key = PATH_NAME,n) %>%
@@ -81,7 +89,6 @@ trips_play %>%
   select(-TREATMENT) %>%
   chisq.test(simulate.p.value = TRUE)
   
-
 trips_play %>%
   count(TREATMENT, PATH_NAME) %>%
   spread(key = PATH_NAME,n) %>%
@@ -89,8 +96,6 @@ trips_play %>%
   group_by() %>%
   select(-TREATMENT) %>%
   chisq.test(simulate.p.value = TRUE)
-
-
 
 trips_play %>%
   count(TREATMENT, PATH_NAME) %>%
@@ -100,17 +105,97 @@ trips_play %>%
   select(-TREATMENT) %>%
   chisq.test(simulate.p.value = TRUE)
 
+# By OD
+trips_play %>%
+  count(OD,TREATMENT, PATH_NAME) %>%
+  spread(key = PATH_NAME,n) %>%
+  filter(OD=="O1D1", TREATMENT %in% c("t1", "t2")) %>%
+  group_by() %>%
+  select(O1D1_center, O1D1_north, O1D1_south) %>%
+  chisq.test(simulate.p.value = TRUE)
+
+trips_play %>%
+  count(OD,TREATMENT, PATH_NAME) %>%
+  spread(key = PATH_NAME,n) %>%
+  filter(OD=="O1D1", TREATMENT %in% c("t1", "t3")) %>%
+  group_by() %>%
+  select(O1D1_center, O1D1_north, O1D1_south) %>%
+  chisq.test(simulate.p.value = TRUE)
+
+
+trips_play %>%
+  count(OD,TREATMENT, PATH_NAME) %>%
+  spread(key = PATH_NAME,n) %>%
+  filter(OD=="O1D1", TREATMENT %in% c("t2", "t3")) %>%
+  group_by() %>%
+  select(O1D1_center, O1D1_north, O1D1_south) %>%
+  chisq.test(simulate.p.value = TRUE)
+
+#
+trips_play %>%
+  count(OD,TREATMENT, PATH_NAME) %>%
+  spread(key = PATH_NAME,n) %>%
+  filter(OD=="O2D1", TREATMENT %in% c("t1", "t2")) %>%
+  group_by() %>%
+  select(O2D1_center, O2D1_north, O2D1_south) %>%
+  chisq.test(simulate.p.value = TRUE)
+
+trips_play %>%
+  count(OD,TREATMENT, PATH_NAME) %>%
+  spread(key = PATH_NAME,n) %>%
+  filter(OD=="O2D1", TREATMENT %in% c("t1", "t3")) %>%
+  group_by() %>%
+  select(O2D1_center, O2D1_north, O2D1_south) %>%
+  chisq.test(simulate.p.value = TRUE)
+
+
+trips_play %>%
+  count(OD,TREATMENT, PATH_NAME) %>%
+  spread(key = PATH_NAME,n) %>%
+  filter(OD=="O2D1", TREATMENT %in% c("t2", "t3")) %>%
+  group_by() %>%
+  select(O2D1_center, O2D1_north, O2D1_south) %>%
+  chisq.test(simulate.p.value = TRUE)
+
+#
+trips_play %>%
+  count(OD,TREATMENT, PATH_NAME) %>%
+  spread(key = PATH_NAME,n) %>%
+  filter(OD=="O3D2", TREATMENT %in% c("t1", "t2")) %>%
+  group_by() %>%
+  select(O3D2_center, O3D2_north, O3D2_south) %>%
+  chisq.test(simulate.p.value = TRUE)
+
+trips_play %>%
+  count(OD,TREATMENT, PATH_NAME) %>%
+  spread(key = PATH_NAME,n) %>%
+  filter(OD=="O3D2", TREATMENT %in% c("t1", "t3")) %>%
+  group_by() %>%
+  select(O3D2_center, O3D2_north, O3D2_south) %>%
+  chisq.test(simulate.p.value = TRUE)
+
+
+trips_play %>%
+  count(OD,TREATMENT, PATH_NAME) %>%
+  spread(key = PATH_NAME,n) %>%
+  filter(OD=="O3D2", TREATMENT %in% c("t2", "t3")) %>%
+  group_by() %>%
+  select(O3D2_center, O3D2_north, O3D2_south) %>%
+  chisq.test(simulate.p.value = TRUE)
+
+
+###########
+
 
 ##### Time choice dist
 trips_play %>%
   ggplot() +
-  geom_histogram(aes(DEP_TIME_F, fill=TREATMENT), binwidth=300,center=hms(25350)) +
+  geom_histogram(aes(DEP_TIME_F, fill=TREATMENT), binwidth=300) +
   theme_bw() +
   xlab("departure time")
 
 
-ggsave("timeChoiceDist.png",  width = 20, height = 10, units = "cm",
-       dpi = 300, limitsize = TRUE)
+#ggsave("timeChoiceDist.png",  width = 20, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
 
 # 
 trips_play %>%
@@ -120,8 +205,7 @@ trips_play %>%
   theme_bw() +
   xlab("departure time")
 
-ggsave("timeChoiceDist-DEMAND.png",  width = 20, height = 10, units = "cm",
-       dpi = 300, limitsize = TRUE)
+#ggsave("timeChoiceDist-DEMAND.png",  width = 20, height = 10, units = "cm", dpi = 300, limitsize = TRUE)
 
 
 # The choice distribution half of experiment

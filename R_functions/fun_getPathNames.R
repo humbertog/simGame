@@ -30,7 +30,7 @@ getPathNames <- function(path, path_list, simmilarity=.8) {
     #print(paste(as.character(max(perc_equal)), route_name))
     #path_max_p <- c(path_max_p, max(perc_equal))
     if (length(route_name) == 1 & max(perc_equal) > simmilarity) {
-      route_name < names(orig_route_l2)[route_name_idx][1]
+      route_name < names(path_list)[route_name_idx][1]
     }
     else {
       route_name <- "other"
